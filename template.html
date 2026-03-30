@@ -1,0 +1,2461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 Comp Review AI Agent - CONFIDENTIAL</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+<style>
+:root {
+  --bg: #0d1117; --bg2: #161b22; --bg3: #1c2128; --bg4: #21262d;
+  --border: #30363d; --border2: #484f58;
+  --text: #e6edf3; --text2: #8b949e; --text3: #6e7681;
+  --accent: #6e9ecf; --accent2: #6dae72; --red: #c4785c; --orange: #b8a555; --purple: #9882b5;
+  --teal: #5fa3a0; --pink: #b07fa3;
+  --radius: 6px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { font-size: 13px; }
+body { font-family: -apple-system,'Segoe UI',Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); line-height:1.4; }
+::selection { background:var(--accent); color:var(--bg); }
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:var(--bg2); }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+
+.hdr { background:var(--bg2); border-bottom:1px solid var(--border); padding:10px 20px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+.hdr h1 { font-size:15px; font-weight:600; } .hdr h1 span { color:var(--accent); }
+.hdr-meta { font-size:11px; color:var(--text3); }
+
+.filters { background:var(--bg2); border-bottom:1px solid var(--border); padding:6px 20px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; position:sticky; top:39px; z-index:99; }
+.fg { display:flex; align-items:center; gap:4px; }
+.fg label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; }
+.fg select, .fg input { background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:var(--radius); padding:3px 8px; font-size:12px; outline:none; }
+.fg select { min-width:120px; max-width:180px; }
+.fg select:focus, .fg input:focus { border-color:var(--accent); }
+.btn { background:var(--bg4); color:var(--text2); border:1px solid var(--border); border-radius:var(--radius); padding:3px 10px; font-size:11px; cursor:pointer; }
+.btn:hover { background:var(--border); color:var(--text); }
+
+.main { padding:12px 20px; max-width:1800px; margin:0 auto; }
+.row { display:grid; gap:10px; margin-bottom:10px; }
+.row-4 { grid-template-columns:repeat(4,1fr); }
+.row-5 { grid-template-columns:repeat(5,1fr); }
+.row-2 { grid-template-columns:repeat(2,1fr); }
+.row-3 { grid-template-columns:repeat(3,1fr); }
+.row-1 { grid-template-columns:1fr; }
+@media(max-width:1200px) { .row-4,.row-5 { grid-template-columns:repeat(2,1fr); } }
+@media(max-width:800px) { .row-4,.row-5,.row-2,.row-3 { grid-template-columns:1fr; } }
+
+.card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:12px; }
+.card-title { font-size:10px; text-transform:uppercase; letter-spacing:.6px; color:var(--text3); margin-bottom:6px; }
+.kpi-val { font-size:22px; font-weight:700; }
+.kpi-sub { font-size:11px; color:var(--text3); margin-top:2px; }
+.kpi-desc { font-size:10px; color:var(--text3); opacity:.7; margin-top:1px; font-style:italic; }
+
+.tab-bar { display:flex; gap:0; margin-bottom:12px; border-bottom:2px solid var(--border); }
+.tab-btn { background:transparent; color:var(--text3); border:none; padding:8px 20px; font-size:12px; font-weight:600; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; text-transform:uppercase; letter-spacing:.5px; }
+.tab-btn:hover { color:var(--text2); }
+.tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+.tbl-wrap { overflow:auto; max-height:420px; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+thead { position:sticky; top:0; z-index:2; }
+th { background:var(--bg3); color:var(--text2); padding:5px 8px; text-align:left; font-weight:600; border-bottom:1px solid var(--border);
+     cursor:pointer; white-space:nowrap; user-select:none; font-size:11px; text-transform:uppercase; letter-spacing:.3px; }
+th:hover { color:var(--text); background:var(--bg4); }
+th .sa { font-size:9px; margin-left:2px; opacity:.4; }
+th.sorted .sa { opacity:1; color:var(--accent); }
+td { padding:4px 8px; border-bottom:1px solid var(--border); white-space:nowrap; }
+tr { transition:background .1s; }
+tr:hover { background:var(--bg3); }
+tr.clickable { cursor:pointer; }
+.pos { color:var(--accent2); } .neg { color:var(--red); } .neu { color:var(--text3); }
+.mono { font-family:'SF Mono',Consolas,monospace; font-size:11px; }
+
+.flag { padding:6px 10px; margin-bottom:4px; border-radius:var(--radius); font-size:12px; border-left:3px solid; display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; }
+.flag-High { background:rgba(248,81,73,.1); border-color:var(--red); }
+.flag-Medium { background:rgba(210,153,34,.1); border-color:var(--orange); }
+.flag-id { font-weight:700; min-width:50px; }
+.flag-pill { display:inline-block; font-size:9px; padding:1px 5px; border-radius:3px; margin:1px 2px; white-space:nowrap; }
+.flag-pill-High { background:rgba(248,81,73,.2); color:var(--red); }
+.flag-pill-Medium { background:rgba(210,153,34,.2); color:var(--orange); }
+td.flags-cell { white-space:normal; max-width:200px; line-height:1.4; }
+.flag-tag { font-size:10px; padding:1px 6px; border-radius:3px; background:var(--bg4); color:var(--text2); white-space:nowrap; }
+.flag-detail { color:var(--text2); }
+
+.ch { position:relative; height:220px; }
+.ch-tall { height:300px; }
+
+.person-panel { display:none; }
+.person-panel.open { display:block; }
+.detail-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:6px; }
+.d-item { background:var(--bg3); border-radius:var(--radius); padding:8px; }
+.d-label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:.4px; }
+.d-val { font-size:15px; font-weight:700; margin-top:2px; }
+
+.commentary p { margin-bottom:4px; font-size:12px; color:var(--text2); line-height:1.5; }
+.commentary strong { color:var(--text); }
+.sec-title { font-size:12px; font-weight:600; color:var(--text); margin-bottom:8px; padding-bottom:4px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:6px; }
+.sec-title .badge { font-size:10px; background:var(--bg4); color:var(--text2); padding:1px 6px; border-radius:10px; font-weight:400; }
+
+.algo-panel { margin-bottom:10px; }
+.algo-toggle { cursor:pointer; user-select:none; }
+.algo-toggle:hover { color:var(--accent); }
+.algo-body { display:none; padding-top:8px; }
+.algo-body.open { display:block; }
+.algo-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.algo-section { background:var(--bg3); border-radius:var(--radius); padding:10px; }
+.algo-section h4 { font-size:11px; color:var(--accent); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+.algo-row { display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:11px; }
+.algo-row label { color:var(--text2); min-width:130px; white-space:nowrap; }
+.algo-row input[type=number] { background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:3px; padding:2px 6px; width:60px; font-size:11px; text-align:right; }
+.algo-row input[type=number]:focus { border-color:var(--accent); outline:none; }
+.algo-impact { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:10px; }
+.algo-impact .d-item { text-align:center; }
+@media print {
+  .filters,.hdr { display:none; }
+  body { background:#fff; color:#000; }
+  .card { border:1px solid #ddd; background:#fff; }
+  .pos { color:#16a34a; } .neg { color:#dc2626; }
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1><span>///</span> 2026 Comp Review AI Agent — CONFIDENTIAL</h1>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <input type="file" id="xlsxInput" accept=".xlsx,.xls,.xlsm,.csv" style="display:none">
+    <input type="file" id="xlsxInputV1" accept=".xlsx,.xls,.xlsm,.csv" style="display:none">
+    <input type="file" id="xlsxInputV2" accept=".xlsx,.xls,.xlsm,.csv" style="display:none">
+    <button class="btn" onclick="$('xlsxInput').click()" style="background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600;display:none;">Import Full</button>
+    <button class="btn" onclick="$('xlsxInputV1').click()" style="background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600;">Import + Algo v1</button>
+    <button class="btn" onclick="$('xlsxInputV2').click()" style="background:var(--accent2);color:var(--bg);border-color:var(--accent2);font-weight:600;">Import + Algo v2</button>
+    <button class="btn" id="btnClear" onclick="clearData()" style="display:none;">Clear</button>
+    <div class="hdr-meta" id="hdrMeta">Confidential</div>
+  </div>
+</div>
+
+<div class="filters">
+  <div class="fg"><label>Person</label><select id="fP"><option value="">All</option></select></div>
+  <div class="fg"><label>Team</label><select id="fT"><option value="">All</option></select></div>
+  <div class="fg"><label>Ranking</label><select id="fR"><option value="">All</option></select></div>
+  <div class="fg"><label>Search</label><input type="text" id="fS" placeholder="ID, name or initials..."></div>
+  <button class="btn" onclick="resetFilters()">Reset</button>
+  <div style="flex:1;"></div>
+  <button class="btn" onclick="downloadReport()" style="background:var(--purple);color:var(--bg);border-color:var(--purple);font-weight:600;">&#128196; Download Report</button>
+  <button class="btn" onclick="downloadExcel()" style="background:var(--orange);color:var(--bg);border-color:var(--orange);font-weight:600;">&#128202; Download Excel</button>
+</div>
+
+<div class="main" id="dashMain">
+  <!-- Tab navigation -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('dashboard',this)">Dashboard</button>
+    <button class="tab-btn" onclick="switchTab('algoDoc',this)">Italy Base Algo</button>
+  </div>
+
+  <!-- TAB: Dashboard -->
+  <div class="tab-content" id="tab-dashboard">
+
+  <!-- Empty state (shown when no data loaded) -->
+  <div id="emptyState" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;color:var(--text3);text-align:center;padding:40px 20px;">
+    <div style="font-size:48px;margin-bottom:16px;opacity:.4;">&#128202;</div>
+    <div style="font-size:18px;font-weight:600;color:var(--text2);margin-bottom:8px;">No data loaded</div>
+    <div style="font-size:13px;max-width:700px;margin-bottom:20px;line-height:1.6;">Import an Excel or CSV file to generate the compensation review dashboard. Choose one of the two import modes below.</div>
+
+    <div style="max-width:450px;width:100%;margin-bottom:24px;text-align:left;">
+      <!-- Import Base + Italy Algo -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-top:3px solid var(--accent2);border-radius:var(--radius);padding:16px;">
+        <div style="font-size:13px;font-weight:700;color:var(--accent2);margin-bottom:8px;">Import Base + Italy Algo</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.5;">Minimal input &mdash; the Italy Base Algo computes everything automatically: Base Incr %, Algo, vs Algo, Base Incr EUR, Bonus Incr %, Bonus Incr EUR.</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;">8 mandatory + 8 optional columns</div>
+        <table style="width:100%;font-size:11px;border-collapse:collapse;color:var(--text2);">
+          <tr><td style="padding:2px 6px;border-bottom:1px solid var(--border);font-weight:600;color:var(--text);">Id</td><td style="padding:2px 6px;border-bottom:1px solid var(--border);">Employee identifier</td></tr>
+          <tr><td style="padding:2px 6px;border-bottom:1px solid var(--border);font-weight:600;color:var(--text);">Name</td><td style="padding:2px 6px;border-bottom:1px solid var(--border);">Full name</td></tr>
+          <tr><td style="padding:2px 6px;border-bottom:1px solid var(--border);font-weight:600;color:var(--text);">Team</td><td style="padding:2px 6px;border-bottom:1px solid var(--border);">Team / department (e.g. CAT:DBX)</td></tr>
+          <tr><td style="padding:2px 6px;border-bottom:1px solid var(--border);font-weight:600;color:var(--text);">Ranking</td><td style="padding:2px 6px;border-bottom:1px solid var(--border);">1-TOP 10% &hellip; 5-BOTTOM 10%</td></tr>
+          <tr><td style="padding:2px 6px;border-bottom:1px solid var(--border);font-weight:600;color:var(--text);">Criticality</td><td style="padding:2px 6px;border-bottom:1px solid var(--border);">1&ndash;5 (used for Middle logic)</td></tr>
+          <tr><td style="padding:2px 6px;border-bottom:1px solid var(--border);font-weight:600;color:var(--text);">Potential</td><td style="padding:2px 6px;border-bottom:1px solid var(--border);">1&ndash;5 (used for Middle logic)</td></tr>
+          <tr><td style="padding:2px 6px;border-bottom:1px solid var(--border);font-weight:600;color:var(--text);">Hire Date</td><td style="padding:2px 6px;border-bottom:1px solid var(--border);">For tenure calculation (also: Join Date, Hired)</td></tr>
+          <tr><td style="padding:2px 6px;border-bottom:1px solid var(--border);font-weight:600;color:var(--accent);">2026 HR Base</td><td style="padding:2px 6px;border-bottom:1px solid var(--border);color:var(--accent);">Mandatory &mdash; drives the algo</td></tr>
+        </table>
+        <div style="font-size:11px;color:var(--text3);margin:8px 0 4px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;">Optional columns</div>
+        <table style="width:100%;font-size:11px;border-collapse:collapse;color:var(--text3);">
+          <tr><td style="padding:2px 6px;border-bottom:1px solid var(--border);">2026 Suggested Base</td><td style="padding:2px 6px;border-bottom:1px solid var(--border);">If missing, algo result is used as suggestion</td></tr>
+          <tr><td style="padding:2px 6px;border-bottom:1px solid var(--border);">2025 Base</td><td style="padding:2px 6px;border-bottom:1px solid var(--border);">For increase % vs prior year</td></tr>
+          <tr><td style="padding:2px 6px;border-bottom:1px solid var(--border);">2025 HR Bonus</td><td style="padding:2px 6px;border-bottom:1px solid var(--border);">If present with Sug Bonus, enables bonus KPIs</td></tr>
+          <tr><td style="padding:2px 6px;border-bottom:1px solid var(--border);">2025 Suggested Bonus</td><td style="padding:2px 6px;border-bottom:1px solid var(--border);">If present with HR Bonus, enables bonus KPIs</td></tr>
+          <tr><td style="padding:2px 6px;border-bottom:1px solid var(--border);">2024 Bonus</td><td style="padding:2px 6px;border-bottom:1px solid var(--border);">For bonus YoY comparison</td></tr>
+          <tr><td style="padding:2px 6px;border-bottom:1px solid var(--border);">2024 Base</td><td style="padding:2px 6px;border-bottom:1px solid var(--border);">Historical base</td></tr>
+          <tr><td style="padding:2px 6px;border-bottom:1px solid var(--border);">2023 Base</td><td style="padding:2px 6px;border-bottom:1px solid var(--border);">Historical base</td></tr>
+          <tr><td style="padding:2px 6px;">Comments</td><td style="padding:2px 6px;">Supporting salary review notes</td></tr>
+        </table>
+        <div style="font-size:10px;color:var(--text3);margin-top:8px;line-height:1.5;font-style:italic;">Column ordering is not mandatory. Column matching is fuzzy &mdash; underscores, hyphens, spaces are normalised. E.g. <code style="color:var(--text2);">2026 HR Base</code>, <code style="color:var(--text2);">2026_HR_Base</code>, <code style="color:var(--text2);">hr base</code> all work.</div>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button class="btn" onclick="$('xlsxInputV1').click()" style="background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600;padding:6px 18px;font-size:12px;flex:1;">Import + Algo v1</button>
+          <button class="btn" onclick="$('xlsxInputV2').click()" style="background:var(--accent2);color:var(--bg);border-color:var(--accent2);font-weight:600;padding:6px 18px;font-size:12px;flex:1;">Import + Algo v2</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="row row-5" id="kpiBudget" style="margin-bottom:4px;"></div>
+  <div class="row row-4" id="kpiBudgetBonus" style="margin-bottom:4px;"></div>
+  <div class="row row-4" id="kpis" style="margin-bottom:4px;"></div>
+
+  <!-- Person Detail -->
+  <div class="card person-panel" id="pp" style="margin-bottom:10px">
+    <div class="sec-title" style="justify-content:space-between;">
+      <span>Individual: <span id="ppName"></span></span>
+      <button class="btn" onclick="downloadProfile()" style="font-size:11px;">&#128196; Download Word</button>
+    </div>
+    <div id="ppComment" style="display:none;background:var(--bg3);border-left:3px solid var(--accent);padding:8px 12px;margin-bottom:8px;border-radius:var(--radius);font-size:12px;line-height:1.5;color:var(--text);white-space:pre-wrap;"></div>
+    <div class="detail-grid" id="ppGrid"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+      <div class="ch"><canvas id="ppChart"></canvas></div>
+      <div id="ppFlags" style="max-height:220px;overflow:auto;"></div>
+    </div>
+  </div>
+
+  <!-- Executive Summary -->
+  <div class="card" style="margin-bottom:10px;padding:10px 14px;">
+    <div class="commentary" id="cmt"></div>
+  </div>
+
+  <!-- Algo Configurator -->
+  <div class="card algo-panel" id="algoPanel">
+    <div class="sec-title algo-toggle" onclick="$('algoBody').classList.toggle('open');this.querySelector('.badge').textContent=$('algoBody').classList.contains('open')?'▾':'▸'">
+      Italy Base Algo Configurator <span class="badge">▸</span>
+    </div>
+    <div class="algo-body" id="algoBody">
+      <div class="algo-grid">
+        <!-- Ranking 1: TOP 10% -->
+        <div class="algo-section">
+          <h4>1 - TOP 10%</h4>
+          <div class="algo-row"><label>&lt; 36k</label><input type="number" step="0.01" data-algo="r1_lt36" value="1.12"> ×</div>
+          <div class="algo-row"><label>36k – 45k</label><input type="number" step="0.01" data-algo="r1_45" value="1.11"> ×</div>
+          <div class="algo-row"><label>45k – 55k</label><input type="number" step="0.01" data-algo="r1_55" value="1.10"> ×</div>
+          <div class="algo-row"><label>55k – 60k</label><input type="number" step="0.01" data-algo="r1_60" value="1.09"> ×</div>
+          <div class="algo-row"><label>60k – 70k</label><input type="number" step="0.01" data-algo="r1_70" value="1.07"> ×</div>
+          <div class="algo-row"><label>&gt; 70k</label><input type="number" step="0.01" data-algo="r1_gt70" value="1.03"> ×</div>
+          <div class="algo-row"><label>Floor (≤34k)</label><input type="number" step="500" data-algo="r1_floor" value="35000"> €</div>
+        </div>
+        <!-- Ranking 2: TOP 30% -->
+        <div class="algo-section">
+          <h4>2 - TOP 30% (Next 20%)</h4>
+          <div class="algo-row"><label>&lt; 36k</label><input type="number" step="0.01" data-algo="r2_lt36" value="1.06"> ×</div>
+          <div class="algo-row"><label>36k – 55k</label><input type="number" step="0.01" data-algo="r2_55" value="1.05"> ×</div>
+          <div class="algo-row"><label>55k – 70k</label><input type="number" step="0.01" data-algo="r2_70" value="1.03"> ×</div>
+          <div class="algo-row"><label>&gt; 70k</label><input type="number" step="0.01" data-algo="r2_gt70" value="1.02"> ×</div>
+          <div class="algo-row"><label>Floor (≤36k)</label><input type="number" step="500" data-algo="r2_floor" value="36000"> €</div>
+        </div>
+        <!-- Ranking 3: MIDDLE (high score ≥ 5) -->
+        <div class="algo-section">
+          <h4>3 - MIDDLE (score ≥ 5)</h4>
+          <div class="algo-row"><label>&lt; 36k</label><input type="number" step="0.01" data-algo="r3h_lt36" value="1.04"> ×</div>
+          <div class="algo-row"><label>36k – 55k</label><input type="number" step="0.01" data-algo="r3h_55" value="1.03"> ×</div>
+          <div class="algo-row"><label>&gt; 55k</label><input type="number" step="0.01" data-algo="r3h_gt55" value="1.02"> ×</div>
+        </div>
+        <!-- Ranking 3: MIDDLE (mid score ≥ 3.5) -->
+        <div class="algo-section">
+          <h4>3 - MIDDLE (score ≥ 3.5)</h4>
+          <div class="algo-row"><label>&lt; 36k</label><input type="number" step="0.01" data-algo="r3m_lt36" value="1.03"> ×</div>
+          <div class="algo-row"><label>36k – 55k</label><input type="number" step="0.01" data-algo="r3m_55" value="1.02"> ×</div>
+          <div class="algo-row"><label>&gt; 55k</label><input type="number" step="0.01" data-algo="r3m_gt55" value="1.01"> ×</div>
+        </div>
+      </div>
+      <!-- MIDDLE special rules + Weights & Thresholds -->
+      <div class="algo-grid" style="margin-top:10px;">
+        <div class="algo-section">
+          <h4>3 - MIDDLE: Special Rules</h4>
+          <div class="algo-row"><label>Crit=5 (≤65k)</label><input type="number" step="0.01" data-algo="r3_crit5_le65" value="1.02"> ×</div>
+          <div class="algo-row"><label>Crit=5 (&gt;65k)</label><input type="number" step="0.01" data-algo="r3_crit5_gt65" value="1.01"> ×</div>
+          <div class="algo-row"><label>Crit≥4 flat</label><input type="number" step="0.01" data-algo="r3_crit4_flat" value="1.01"> ×</div>
+          <div class="algo-row"><label>Bias floor (&lt;40k)</label><input type="number" step="0.005" data-algo="r3_bias_lt40" value="1.025"> ×</div>
+          <div class="algo-row"><label>Bias floor (40–55k)</label><input type="number" step="0.005" data-algo="r3_bias_lt55" value="1.015"> ×</div>
+          <div class="algo-row"><label>Middle ≤34k floor</label><input type="number" step="500" data-algo="r3_mid_floor" value="35000"> €</div>
+        </div>
+        <div class="algo-section">
+          <h4>Score Weights & Thresholds</h4>
+          <div class="algo-row"><label>Criticality weight</label><input type="number" step="0.1" data-algo="w_crit" value="0.6"></div>
+          <div class="algo-row"><label>Potential weight</label><input type="number" step="0.1" data-algo="w_pot" value="0.4"></div>
+          <div class="algo-row"><label>High score threshold</label><input type="number" step="0.5" data-algo="t_high" value="5"></div>
+          <div class="algo-row"><label>Mid score threshold</label><input type="number" step="0.5" data-algo="t_mid" value="3.5"></div>
+          <div class="algo-row"><label>Middle cap (no incr above)</label><input type="number" step="1000" data-algo="mid_cap" value="65000"></div>
+        </div>
+      </div>
+      <!-- Apply + Impact -->
+      <div style="margin-top:10px;display:flex;align-items:center;gap:12px;">
+        <button class="btn" onclick="applyAlgo()" style="background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600;padding:4px 16px;">Apply & Recalculate</button>
+        <button class="btn" onclick="resetAlgo()">Reset Defaults</button>
+      </div>
+      <div class="algo-impact" id="algoImpact"></div>
+    </div>
+  </div>
+
+  <!-- Tables -->
+  <div class="row row-1">
+    <div class="card">
+      <div class="sec-title">Team Summary</div>
+      <div class="tbl-wrap"><table id="tTeam"><thead><tr>
+        <th data-c="0">Team<span class="sa">&#9650;</span></th>
+        <th data-c="1" title="Number of people in this team">People<span class="sa">&#9650;</span></th>
+        <th data-c="2" title="Average base increase % I suggested (2025→2026)">My Avg Incr %<span class="sa">&#9650;</span></th>
+        <th data-c="3" title="Average base increase % from HR pool (2025→2026)">HR Pool Avg %<span class="sa">&#9650;</span></th>
+        <th data-c="4" title="Median base increase % I suggested">Median Incr %<span class="sa">&#9650;</span></th>
+        <th data-c="5" title="Total EUR gap: my suggestion vs HR pool (positive = I suggest more)">Base Gap EUR<span class="sa">&#9650;</span></th>
+        <th data-c="6" title="Average % gap: my suggestion vs HR pool">Base Gap %<span class="sa">&#9650;</span></th>
+        <th data-c="7" title="Total EUR gap: my bonus suggestion vs HR pool">Bonus Gap EUR<span class="sa">&#9650;</span></th>
+        <th data-c="8" title="Total EUR gap: my suggestion vs Italy Base algo (positive = I suggest more than algo)">Sug vs IT Algo EUR<span class="sa">&#9650;</span></th>
+        <th data-c="9" title="People over/at/under HR pool for base salary">Over / At / Under<span class="sa">&#9650;</span></th>
+        <th data-c="10" title="Average years in company">Avg Tenure<span class="sa">&#9650;</span></th>
+      </tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+  <div class="row row-1">
+    <div class="card">
+      <div class="sec-title">Ranking Summary</div>
+      <div class="tbl-wrap"><table id="tRank"><thead><tr>
+        <th data-c="0">Ranking<span class="sa">&#9650;</span></th>
+        <th data-c="1" title="Number of people in this ranking">People<span class="sa">&#9650;</span></th>
+        <th data-c="2" title="Average base increase % I suggested (2025→2026)">My Avg Incr %<span class="sa">&#9650;</span></th>
+        <th data-c="3" title="Average base increase % from HR pool (2025→2026)">HR Pool Avg %<span class="sa">&#9650;</span></th>
+        <th data-c="4" title="Median base increase % I suggested">Median Incr %<span class="sa">&#9650;</span></th>
+        <th data-c="5" title="Avg gap: my suggested base vs HR pool (positive = I suggest more than HR)">Base Gap vs Pool %<span class="sa">&#9650;</span></th>
+        <th data-c="6" title="Avg gap: my suggestion vs Italy Base algo (positive = I suggest more than algo)">Sug vs IT Algo %<span class="sa">&#9650;</span></th>
+        <th data-c="7" title="Avg gap: my suggested bonus vs HR pool (positive = I suggest more than HR)">Bonus Gap vs Pool %<span class="sa">&#9650;</span></th>
+        <th data-c="8" title="Average bonus as percentage of base salary">Bonus / Base %<span class="sa">&#9650;</span></th>
+      </tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- Individual table with inline flags -->
+  <div class="card">
+    <div class="sec-title">Individual Data <span class="badge" id="indCount"></span></div>
+    <div class="tbl-wrap" style="max-height:400px;"><table id="tInd"><thead><tr>
+      <th data-c="0">Id<span class="sa">&#9650;</span></th>
+      <th data-c="1">Name<span class="sa">&#9650;</span></th>
+      <th data-c="2">productGroup<span class="sa">&#9650;</span></th>
+      <th data-c="3">hireDate<span class="sa">&#9650;</span></th>
+      <th data-c="4">Ranking<span class="sa">&#9650;</span></th>
+      <th data-c="5">Flags<span class="sa">&#9650;</span></th>
+      <th data-c="6">Criticality<span class="sa">&#9650;</span></th>
+      <th data-c="7">Potential<span class="sa">&#9650;</span></th>
+      <th data-c="8">2026 HR Base<span class="sa">&#9650;</span></th>
+      <th data-c="9">2026 Suggested Base<span class="sa">&#9650;</span></th>
+      <th data-c="10">Base Incr %<span class="sa">&#9650;</span></th>
+      <th data-c="11">IT BASE ALGO<span class="sa">&#9650;</span></th>
+      <th data-c="12">vs IT Algo<span class="sa">&#9650;</span></th>
+      <th data-c="13">Base Incr EUR<span class="sa">&#9650;</span></th>
+      <th data-c="14">2025 Hr Bonus<span class="sa">&#9650;</span></th>
+      <th data-c="15">2025 Suggested Bonus<span class="sa">&#9650;</span></th>
+      <th data-c="16">Bonus Incr %<span class="sa">&#9650;</span></th>
+      <th data-c="17">Bonus Incr EUR<span class="sa">&#9650;</span></th>
+      <th data-c="18">2025 Base<span class="sa">&#9650;</span></th>
+      <th data-c="19">2024 Bonus<span class="sa">&#9650;</span></th>
+      <th data-c="20">2024 Base<span class="sa">&#9650;</span></th>
+      <th data-c="21">2023 Base<span class="sa">&#9650;</span></th>
+      <th data-c="22">Comments<span class="sa">&#9650;</span></th>
+    </tr></thead><tbody></tbody></table></div>
+  </div>
+
+  <!-- Charts -->
+  <div class="row row-2">
+    <div class="card"><div class="card-title">Base: My Suggestion vs HR Pool per Person (EUR)</div><div class="ch ch-tall"><canvas id="cGapPerson"></canvas></div></div>
+    <div class="card"><div class="card-title">Bonus: My Suggestion vs HR Pool per Person (EUR)</div><div class="ch ch-tall"><canvas id="cGapBonusPerson"></canvas></div></div>
+  </div>
+  <div class="row row-2">
+    <div class="card"><div class="card-title">Base: Pool vs Italy Base Algo vs My Suggestion per Person (EUR)</div><div class="ch ch-tall"><canvas id="cTriple"></canvas></div></div>
+    <div class="card"><div class="card-title">Base Increase % by Ranking: My Suggestion vs HR Pool</div><div class="ch"><canvas id="c2"></canvas></div></div>
+  </div>
+  <div class="row row-2">
+    <div class="card"><div class="card-title">Base Increase Distribution: How Many People in Each Range</div><div class="ch"><canvas id="c4"></canvas></div></div>
+    <div class="card"><div class="card-title">Ranking vs Base Increase %: Are Top Performers Getting More?</div><div class="ch"><canvas id="c5"></canvas></div></div>
+  </div>
+  </div><!-- /tab-dashboard -->
+
+  <!-- TAB: Italy Base Algo -->
+  <div class="tab-content" id="tab-algoDoc" style="display:none;">
+    <div class="card" style="padding:24px 32px;max-width:1100px;line-height:1.7;font-size:13px;">
+
+      <h2 style="color:var(--accent);margin:0 0 6px 0;font-size:20px;">2026 Salary Review — Executive Summary</h2>
+      <p style="color:var(--text3);font-size:12px;margin:0 0 4px 0;">Selective merit increase under zero-budget mandate &nbsp;|&nbsp; Calibrated against Italy IT market 2026</p>
+      <p style="color:var(--text3);font-size:11px;margin:0 0 20px 0;">Confidential — Internal use only</p>
+
+      <h3 style="color:var(--text);margin:20px 0 8px;border-bottom:1px solid var(--border);padding-bottom:4px;">Context</h3>
+      <p>HR mandate: <strong>zero base salary increase</strong> for 2026. This algorithm selectively distributes resources to protect top performers and at-risk talent while remaining defensible to HR. All new base salaries (non-bottom) are rounded <strong>UP</strong> to the nearest &euro;500 via CEILING. Bottom performers retain their exact current salary — zero exceptions.</p>
+
+      <h3 style="color:var(--text);margin:20px 0 8px;border-bottom:1px solid var(--border);padding-bottom:4px;">Guiding Principles</h3>
+      <ol style="padding-left:20px;">
+        <li><strong>Reward performance rank</strong></li>
+        <li><strong>Correct market gaps</strong> at lower salary levels</li>
+        <li><strong>Protect retention</strong> where it matters most</li>
+        <li><strong>Fully defensible</strong> under the EU Pay Transparency Directive (effective 7 June 2026)</li>
+      </ol>
+
+      <h3 style="color:var(--text);margin:20px 0 8px;border-bottom:1px solid var(--border);padding-bottom:4px;">Market Calibration</h3>
+      <p>Algorithm calibrated against <strong>Italy IT market 2026</strong>: average tech sector growth 5–7% (Hays Salary Guide 2026, Feb 2026). Top performers intentionally receive above-market increases to correct accumulated gaps. Middle and Top 30% are within market range. Only gap: low-score Middle with salary &gt; &euro;55k.</p>
+
+      <!-- 1. Ranking Overview -->
+      <h3 style="color:var(--text);margin:20px 0 8px;border-bottom:1px solid var(--border);padding-bottom:4px;">1. Ranking Overview</h3>
+      <table style="width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:12px;">
+        <thead><tr style="background:var(--bg4);">
+          <th style="text-align:left;padding:8px;border:1px solid var(--border);">Ranking</th>
+          <th style="text-align:left;padding:8px;border:1px solid var(--border);">Profile</th>
+          <th style="text-align:center;padding:8px;border:1px solid var(--border);">Range</th>
+          <th style="text-align:left;padding:8px;border:1px solid var(--border);">Logic</th>
+          <th style="text-align:center;padding:8px;border:1px solid var(--border);">Signal</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);color:var(--accent);font-weight:600;">1 — TOP 10%</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Best performers</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">+3% &rarr; +12%</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Salary-banded — lower salary = higher %</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent2);">Strong reward</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);color:var(--accent2);font-weight:600;">2 — TOP 30%</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Strong performers</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">+2% &rarr; +6%</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Same bands, half rate</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent2);">Recognition</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);color:var(--text2);font-weight:600;">3 — MIDDLE</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Core team</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">0% &rarr; +4%</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Criticality + Potential score &times; salary band + floor</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent2);">Selective</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);color:var(--red);font-weight:600;">4 — BOTTOM 30%</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Below expectation</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">0%</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Zero — exact salary preserved, no rounding</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--red);">Performance signal</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);color:var(--red);font-weight:600;">5 — BOTTOM 10%</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Lowest performers</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">0%</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Zero — exact salary preserved, no rounding</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--red);">Performance signal</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 2. TOP 10% Detail -->
+      <h3 style="color:var(--accent);margin:20px 0 8px;border-bottom:1px solid var(--border);padding-bottom:4px;">2. TOP 10% — Salary Band Detail</h3>
+      <table style="width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:12px;">
+        <thead><tr style="background:var(--bg4);">
+          <th style="text-align:left;padding:8px;border:1px solid var(--border);">Salary Band</th>
+          <th style="text-align:center;padding:8px;border:1px solid var(--border);">Rate</th>
+          <th style="text-align:left;padding:8px;border:1px solid var(--border);">Notes</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">&le; &euro;34,000</td><td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent);font-weight:700;">MAX(&euro;35k, algo)</td><td style="padding:6px 8px;border:1px solid var(--border);">Entry-level floor — algo still applied, whichever is higher</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">&lt; &euro;36,000</td><td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent);font-weight:700;">+12%</td><td style="padding:6px 8px;border:1px solid var(--border);">Maximum correction — junior / underpaid</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">&euro;36k – &euro;45k</td><td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent);">+11%</td><td style="padding:6px 8px;border:1px solid var(--border);">Strong correction</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">&euro;45k – &euro;55k</td><td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent);">+10%</td><td style="padding:6px 8px;border:1px solid var(--border);">Meaningful increase</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">&euro;55k – &euro;60k</td><td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent);">+9%</td><td style="padding:6px 8px;border:1px solid var(--border);">Transition band — added to reduce cliff edge at &euro;55k</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">&euro;60k – &euro;70k</td><td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent);">+7%</td><td style="padding:6px 8px;border:1px solid var(--border);">Senior recognition</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">&gt; &euro;70,000</td><td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent);">+3%</td><td style="padding:6px 8px;border:1px solid var(--border);">Symbolic signal — senior / high salary</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 3. TOP 30% Detail -->
+      <h3 style="color:var(--accent2);margin:20px 0 8px;border-bottom:1px solid var(--border);padding-bottom:4px;">3. TOP 30% — Salary Band Detail</h3>
+      <table style="width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:12px;">
+        <thead><tr style="background:var(--bg4);">
+          <th style="text-align:left;padding:8px;border:1px solid var(--border);">Salary Band</th>
+          <th style="text-align:center;padding:8px;border:1px solid var(--border);">Rate</th>
+          <th style="text-align:left;padding:8px;border:1px solid var(--border);">Notes</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">&le; &euro;36,000</td><td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent2);font-weight:700;">MAX(&euro;36k, algo)</td><td style="padding:6px 8px;border:1px solid var(--border);">Minimum floor — higher than Middle minimum</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">&lt; &euro;36,000</td><td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">+6%</td><td style="padding:6px 8px;border:1px solid var(--border);">Market correction</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">&euro;36k – &euro;55k</td><td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">+5%</td><td style="padding:6px 8px;border:1px solid var(--border);">Recognition</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">&euro;55k – &euro;70k</td><td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">+3%</td><td style="padding:6px 8px;border:1px solid var(--border);">Modest signal</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">&gt; &euro;70,000</td><td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">+2%</td><td style="padding:6px 8px;border:1px solid var(--border);">Symbolic</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 4. MIDDLE Detail -->
+      <h3 style="color:var(--text2);margin:20px 0 8px;border-bottom:1px solid var(--border);padding-bottom:4px;">4. MIDDLE — Score-Based Logic</h3>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--purple);padding:12px 16px;border-radius:4px;margin:10px 0;">
+        <strong style="color:var(--purple);">Score Formula</strong><br>
+        <code style="color:var(--text);font-size:13px;">Score = (Criticality &times; 0.6) + (Potential &times; 0.4) &nbsp;&nbsp;|&nbsp;&nbsp; Max = 6.0</code><br>
+        <span style="color:var(--text3);font-size:12px;">Criticality weighted 60% — retention risk is immediate. Potential weighted 40% — represents future investment.</span><br>
+        <span style="color:var(--orange);font-size:12px;">Salary-based floors protect against manager under-rating bias: &lt; &euro;40k &rarr; min 2.5%, &euro;40–55k &rarr; min 1.5%, regardless of score.</span>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:12px;">
+        <thead><tr style="background:var(--bg4);">
+          <th style="text-align:left;padding:8px;border:1px solid var(--border);">Condition (priority order)</th>
+          <th style="text-align:center;padding:8px;border:1px solid var(--border);">Increase</th>
+          <th style="text-align:left;padding:8px;border:1px solid var(--border);">Rationale</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);font-weight:600;">Salary &gt; &euro;65k AND Criticality &lt; 5</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">0%</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Middle at senior pay without max criticality — no case for increase</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);font-weight:600;color:var(--orange);">Criticality = 5 (any salary)</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">&le;&euro;65k &rarr; +2% &nbsp;|&nbsp; &gt;&euro;65k &rarr; +1%</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Retention emergency — always gets something regardless of salary</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);font-weight:600;">Salary &le; &euro;34k</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent);font-weight:700;">&euro;35,000 flat</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Cannot leave middle at entry-level pay</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);font-weight:600;">Score &ge; 5.0</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">&lt;36k: +4% &nbsp;|&nbsp; &le;55k: +3% &nbsp;|&nbsp; else: +2%</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">High value — corrects market gap</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);font-weight:600;">Score &ge; 3.5</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">Crit&ge;4: +1% &nbsp;|&nbsp; &lt;36k: +3% &nbsp;|&nbsp; &le;55k: +2% &nbsp;|&nbsp; else: +1%</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Moderate signal — selective reward</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);font-weight:600;">Score &lt; 3.5</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">Crit&ge;4 &rarr; +1% &nbsp;|&nbsp; else &rarr; 0%</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Criticality-only floor — protects critical profiles with low potential</td></tr>
+          <tr style="background:rgba(210,153,34,.06);"><td style="padding:6px 8px;border:1px solid var(--border);color:var(--orange);font-weight:600;">FLOOR: salary &lt; &euro;40k (any score)</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">Minimum +2.5% guaranteed</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Anti manager-bias — underpaid protection</td></tr>
+          <tr style="background:rgba(210,153,34,.06);"><td style="padding:6px 8px;border:1px solid var(--border);color:var(--orange);font-weight:600;">FLOOR: salary &euro;40k – &euro;55k</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">Minimum +1.5% guaranteed</td>
+            <td style="padding:6px 8px;border:1px solid var(--border);">Anti manager-bias — partial market correction</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 5. Italy IT Market 2026 Benchmark -->
+      <h3 style="color:var(--text);margin:20px 0 8px;border-bottom:1px solid var(--border);padding-bottom:4px;">5. Italy IT Market 2026 — Benchmark</h3>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--accent);padding:12px 16px;border-radius:4px;margin:10px 0;">
+        <strong style="color:var(--text2);">Sources:</strong> <span style="color:var(--text3);">Hays Salary Guide 2026 (Feb 2026, ~1,300 Italian tech professionals) &middot; ECA Salary Trends Europe 2025–26 &middot; Ravio Compensation Trends 2026.</span><br>
+        <strong style="color:var(--text2);">Key data:</strong> <span style="color:var(--text3);">Average tech RAL Italy &euro;50,730 (below white-collar average of &euro;56,360). Same-employer increases: 2–5%. Job change: 15–20%. Tech sector average: 5–7%. Italy inflation 2026: ~2%. Expected real salary growth: ~2–3%.</span>
+      </div>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--accent2);padding:12px 16px;border-radius:4px;margin:10px 0;">
+        <strong style="color:var(--accent2);">Verdict:</strong> The algorithm is well-calibrated for the Italian market. Top performers receive above-market increases — intentional. The only gap is low-score Middle with salary &gt; &euro;55k receiving 0% vs 2–3% market expectation.
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:12px;">
+        <thead><tr style="background:var(--bg4);">
+          <th style="text-align:left;padding:8px;border:1px solid var(--border);">Profile</th>
+          <th style="text-align:center;padding:8px;border:1px solid var(--border);">This Algo</th>
+          <th style="text-align:center;padding:8px;border:1px solid var(--border);">Italy IT Market 2026</th>
+          <th style="text-align:center;padding:8px;border:1px solid var(--border);">Assessment</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">Top10 junior &lt; &euro;36k</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent);font-weight:600;">+12%</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">5–7% (same employer)</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent);">&#11014; Above — market gap correction</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">Top10 mid &euro;45k</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent);">+11%</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">5–7%</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent);">&#11014; Above — intentional, top talent premium</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">Top10 senior &euro;70k</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">+7%</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">5–7%</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent2);">&#10003; In range</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">Top10 high &gt; &euro;70k</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">+3%</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">3–5%</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent2);">&#10003; In range</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">Top30 mid &euro;50k</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">+5%</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">3–5%</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent2);">&#10003; In range</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">Middle good &euro;38k</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">+2.5%</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">2–5%</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent2);">&#10003; In range</td></tr>
+          <tr style="background:rgba(196,120,92,.06);"><td style="padding:6px 8px;border:1px solid var(--border);color:var(--red);">Middle low score &euro;60k</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--red);">0%</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">2–3%</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--red);">&#11015; Below — only gap vs Italian market</td></tr>
+          <tr><td style="padding:6px 8px;border:1px solid var(--border);">Bottom</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">0%</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);">0–1%</td>
+            <td style="text-align:center;padding:6px 8px;border:1px solid var(--border);color:var(--accent2);">&#10003; OK — deliberate signal</td></tr>
+        </tbody>
+      </table>
+
+      <!-- 6. Design Notes -->
+      <h3 style="color:var(--text);margin:20px 0 8px;border-bottom:1px solid var(--border);padding-bottom:4px;">6. Design Notes &amp; Known Limitations</h3>
+
+      <ol style="padding-left:20px;">
+        <li><strong>Cliff edges</strong> at band thresholds (36k, 45k, 55k, 60k, 70k). Mathematically inherent with &euro;500 CEILING rounding. Accepted — cases are rare and deltas minimal.</li>
+        <li><strong>Manager rating bias in Middle.</strong> Partially mitigated by salary floors. Full fix: calibration session before next cycle.</li>
+        <li><strong>Middle low score &gt; &euro;55k receives 0%.</strong> Only gap vs Italian IT market 2026 (expected 2–3%). Consider a 1% universal floor for middle &le; &euro;60k in next cycle.</li>
+        <li><strong>Ranking typo &rarr; salary unchanged silently.</strong> Add a validation column to flag unrecognized ranking values.</li>
+        <li><strong>EU Pay Transparency Directive</strong> effective 7 June 2026. This documented algorithm is the required written justification for pay dispersion between tiers. Keep it versioned.</li>
+      </ol>
+
+      <div style="background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--red);padding:12px 16px;border-radius:4px;margin:14px 0;">
+        <strong style="color:var(--red);">BOTTOM 30% and BOTTOM 10%:</strong> zero increase, no exceptions. Exact current salary preserved — CEILING not applied.
+      </div>
+
+      <p style="color:var(--text3);font-size:11px;margin-top:20px;border-top:1px solid var(--border);padding-top:10px;">Generated: March 2026 &nbsp;|&nbsp; Algorithm version: final &nbsp;|&nbsp; Internal use only — contains compensation data</p>
+    </div>
+  </div><!-- /tab-algoDoc -->
+
+</div>
+
+<script>
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-content').forEach(el=>el.style.display='none');
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  const tab=document.getElementById('tab-'+id);
+  if(tab) tab.style.display='block';
+  if(btn) btn.classList.add('active');
+}
+
+let P=[];
+let TS={};
+let RS={};
+let FL=[];
+let CM=[];
+let ALGO_VERSION='v1';
+
+const f=v=>v!=null?Number(v).toFixed(1):'—';
+const fc=v=>v!=null?Number(v).toLocaleString('en-US',{maximumFractionDigits:0}):'—';
+const fcs=v=>{if(v==null)return'—';const n=Number(v);return(n>0?'+':'')+n.toLocaleString('en-US',{maximumFractionDigits:0});};
+const cc=v=>v==null?'neu':v>0?'pos':v<0?'neg':'neu';
+
+// Muted palette for dark background
+const COLORS=['#6e9ecf','#c4785c','#6dae72','#b8a555','#9882b5','#5fa3a0','#b07fa3','#7a9ab5','#a0b87a','#c9956a'];
+// Semantic colors
+const C_BLUE='#6e9ecf', C_GREEN='#6dae72', C_RED='#c4785c', C_AMBER='#b8a555', C_PURPLE='#9882b5', C_TEAL='#5fa3a0', C_GRAY='#6e7681';
+
+Chart.defaults.color='#8b949e';
+Chart.defaults.font.size=11;
+Chart.defaults.plugins.legend.labels.boxWidth=10;
+Chart.defaults.plugins.legend.labels.padding=8;
+
+// Helper: create a dataset with explicit colors to avoid dark-theme rendering issues
+function ds(label, data, color, extra) {
+  return Object.assign({label, data, backgroundColor:color, borderColor:color, borderWidth:1, borderRadius:3}, extra||{});
+}
+// For datasets with per-bar colors (arrays)
+function dsArr(label, data, colors, extra) {
+  return Object.assign({label, data, backgroundColor:colors, borderColor:colors, borderWidth:1, borderRadius:3}, extra||{});
+}
+const darkScaleOpts = {grid:{color:'rgba(48,54,61,0.6)'},border:{color:'#30363d'}};
+
+const $=id=>document.getElementById(id);
+const fP=$('fP'),fT=$('fT'),fR=$('fR'),fS=$('fS');
+
+function rebuildFilters(){
+  [fP,fT,fR].forEach(sel=>{while(sel.options.length>1)sel.remove(1);sel.value='';});
+  fS.value='';
+  const teams=[...new Set(P.map(p=>p.team))].sort();
+  const ranks=[...new Set(P.map(p=>p.ranking))].sort();
+  P.map(p=>({id:p.id,name:p.name})).sort((a,b)=>String(a.id).localeCompare(String(b.id))).forEach(x=>{const o=document.createElement('option');o.value=x.id;o.text=x.name?x.id+' — '+x.name:x.id;fP.appendChild(o);});
+  teams.forEach(t=>{const o=document.createElement('option');o.value=t;o.text=t;fT.appendChild(o);});
+  ranks.forEach(r=>{const o=document.createElement('option');o.value=r;o.text=r;fR.appendChild(o);});
+}
+rebuildFilters();
+
+function getF(){
+  let d=P;
+  if(fP.value) d=d.filter(p=>p.id===fP.value);
+  if(fT.value) d=d.filter(p=>p.team===fT.value);
+  if(fR.value) d=d.filter(p=>p.ranking===fR.value);
+  const q=fS.value.toLowerCase().trim();
+  if(q){
+    const initials=n=>(n||'').split(/\s+/).map(w=>w[0]||'').join('').toLowerCase();
+    d=d.filter(p=>{
+      const id=String(p.id).toLowerCase(), name=String(p.name||'').toLowerCase();
+      return id.includes(q)||name.includes(q)||initials(p.name).includes(q)||String(p.comments||'').toLowerCase().includes(q);
+    });
+  }
+  return d;
+}
+function resetFilters(){fP.value='';fT.value='';fR.value='';fS.value='';render();}
+fP.onchange=fT.onchange=fR.onchange=render;
+fS.oninput=render;
+
+let charts={};
+function killCharts(){Object.values(charts).forEach(c=>c.destroy());charts={};}
+
+function render(){
+  const empty=P.length===0;
+  $('emptyState').style.display=empty?'flex':'none';
+  $('btnClear').style.display=empty?'none':'inline-block';
+  // Hide all dashboard content except emptyState when no data
+  document.querySelectorAll('#tab-dashboard > :not(#emptyState)').forEach(el=>el.style.display=empty?'none':'');
+  if(empty){killCharts();return;}
+  const d=getF();
+  killCharts();
+  rKPI(d); rPerson(d); rCmt(); rCharts(d); rTeamTbl(); rRankTbl(); rIndTbl(d);
+}
+
+function clearData(){
+  P=[];TS={};RS={};FL=[];CM=[];
+  rebuildFilters();rebuildFlagIndex();
+  $('hdrMeta').textContent='Confidential';
+  render();
+}
+
+function rKPI(d){
+  // --- BASE SALARY ROW: Pool | Algo | My Suggestion | Pool vs Algo | Pool vs Suggestion ---
+  const totalPool=d.reduce((s,p)=>s+(p.base_2026_hr||0),0);
+  const totalAlgo=d.reduce((s,p)=>s+(p.italy_algo||0),0);
+  const totalSug=d.reduce((s,p)=>s+(p.base_2026_sug||0),0);
+  const algoVsPool=totalAlgo-totalPool;
+  const algoVsPoolPct=totalPool>0?_r2(algoVsPool/totalPool*100):null;
+  const sugVsPool=totalSug-totalPool;
+  const sugVsPoolPct=totalPool>0?_r2(sugVsPool/totalPool*100):null;
+  const sugVsAlgo=totalSug-totalAlgo;
+  const sugVsAlgoPct=totalAlgo>0?_r2(sugVsAlgo/totalAlgo*100):null;
+
+  $('kpiBudget').innerHTML=`
+    <div class="card" style="border-left:3px solid var(--orange);">
+      <div class="card-title">BASE: HR Pool</div>
+      <div class="kpi-val">${fc(totalPool)}</div>
+      <div class="kpi-sub">2026 HR Base total</div>
+      <div class="kpi-desc">Original budget allocated by HR</div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--accent);">
+      <div class="card-title">BASE: Italy Base Algo</div>
+      <div class="kpi-val" style="color:var(--accent)">${fc(totalAlgo)}</div>
+      <div class="kpi-sub ${cc(-algoVsPool)}">${fcs(algoVsPool)} vs Pool (${algoVsPoolPct!=null?algoVsPoolPct+'%':'—'})</div>
+      <div class="kpi-desc">What the Italy Base Algo recommends based on ranking &amp; salary band</div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--accent2);">
+      <div class="card-title">BASE: My Suggestion</div>
+      <div class="kpi-val" style="color:var(--accent2)">${fc(totalSug)}</div>
+      <div class="kpi-sub">${d.filter(p=>p.base_gap_abs!=null&&p.base_gap_abs>0).length} over / ${d.filter(p=>p.base_gap_abs!=null&&p.base_gap_abs===0).length} at / ${d.filter(p=>p.base_gap_abs!=null&&p.base_gap_abs<0).length} under pool</div>
+      <div class="kpi-desc">My final decision — what I propose to pay</div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--teal);">
+      <div class="card-title">BASE: Suggestion vs Pool</div>
+      <div class="kpi-val ${cc(-sugVsPool)}">${fcs(sugVsPool)}</div>
+      <div class="kpi-sub ${cc(-sugVsPool)}">${sugVsPoolPct!=null?sugVsPoolPct+'%':'—'} | ${sugVsPool>0?'over budget':sugVsPool<0?'under budget':'on budget'}</div>
+      <div class="kpi-desc">How much my decisions deviate from HR base allocation</div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--purple);">
+      <div class="card-title">BASE: Suggestion vs Italy Algo</div>
+      <div class="kpi-val ${cc(-sugVsAlgo)}">${fcs(sugVsAlgo)}</div>
+      <div class="kpi-sub">${d.filter(p=>p.base_incr_vs_algo!=null&&p.base_incr_vs_algo>0).length} above / ${d.filter(p=>p.base_incr_vs_algo!=null&&p.base_incr_vs_algo===0).length} at / ${d.filter(p=>p.base_incr_vs_algo!=null&&p.base_incr_vs_algo<0).length} below</div>
+      <div class="kpi-desc">How much my decisions deviate from Italy Base Algo guidance</div>
+    </div>`;
+
+  // --- BONUS ROW: Pool | My Suggestion | Pool vs Suggestion | YoY ---
+  const totalBonPool=d.reduce((s,p)=>s+(p.bonus_2025_hr||0),0);
+  const totalBonSug=d.reduce((s,p)=>s+(p.bonus_2025_sug||0),0);
+  const bonSugVsPool=totalBonSug-totalBonPool;
+  const bonSugVsPoolPct=totalBonPool>0?_r2(bonSugVsPool/totalBonPool*100):null;
+  const totalBon2024=d.reduce((s,p)=>s+(p.bonus_2024||0),0);
+  const bonYoY=totalBonSug-totalBon2024;
+  const bonYoYpct=totalBon2024>0?_r2(bonYoY/totalBon2024*100):null;
+  $('kpiBudgetBonus').innerHTML=`
+    <div class="card" style="border-left:3px solid var(--orange);">
+      <div class="card-title">BONUS: HR Pool</div>
+      <div class="kpi-val">${fc(totalBonPool)}</div>
+      <div class="kpi-sub">2025 HR Bonus total</div>
+      <div class="kpi-desc">Bonus budget allocated by HR</div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--accent2);">
+      <div class="card-title">BONUS: My Suggestion</div>
+      <div class="kpi-val" style="color:var(--accent2)">${fc(totalBonSug)}</div>
+      <div class="kpi-sub">${fcs(bonSugVsPool)} vs Pool (${bonSugVsPoolPct!=null?bonSugVsPoolPct+'%':'—'})</div>
+      <div class="kpi-desc">My proposed bonus total</div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--purple);">
+      <div class="card-title">BONUS: Pool vs My Suggestion</div>
+      <div class="kpi-val ${cc(-bonSugVsPool)}">${fcs(bonSugVsPool)}</div>
+      <div class="kpi-sub ${cc(-bonSugVsPool)}">${bonSugVsPool>0?"over budget":bonSugVsPool<0?"under budget":"on budget"} | ${d.filter(p=>p.bonus_gap_abs!=null&&p.bonus_gap_abs>0).length} over / ${d.filter(p=>p.bonus_gap_abs!=null&&p.bonus_gap_abs===0).length} at / ${d.filter(p=>p.bonus_gap_abs!=null&&p.bonus_gap_abs<0).length} under</div>
+      <div class="kpi-desc">Am I spending more or less than HR allocated?</div>
+    </div>
+    <div class="card" style="border-left:3px solid #58a6ff;">
+      <div class="card-title">BONUS: YoY vs 2024</div>
+      <div class="kpi-val ${cc(bonYoY)}">${fcs(bonYoY)}</div>
+      <div class="kpi-sub">${bonYoYpct!=null?bonYoYpct+'%':'—'} change | 2024 total: ${fc(totalBon2024)}</div>
+      <div class="kpi-desc">How my 2025 bonus compares to what was paid in 2024</div>
+    </div>`;
+
+  // --- Third row: operational KPIs ---
+  const inc=d.map(p=>p.base_incr_pct).filter(v=>v!=null);
+  const hrinc=d.map(p=>p.base_hr_incr_pct).filter(v=>v!=null);
+  const bongaps=d.map(p=>p.bonus_gap_abs).filter(v=>v!=null);
+  const avg=inc.length?(inc.reduce((a,b)=>a+b,0)/inc.length):null;
+  const hravg=hrinc.length?(hrinc.reduce((a,b)=>a+b,0)/hrinc.length):null;
+  const netBonusGap=bongaps.length?bongaps.reduce((a,b)=>a+b,0):null;
+  const hf=FL.filter(fl=>fl.severity==='High'&&d.some(p=>p.id===fl.person)).length;
+  const mf=FL.filter(fl=>fl.severity==='Medium'&&d.some(p=>p.id===fl.person)).length;
+  const avgTen=d.map(p=>p.tenure_years).filter(v=>v!=null);
+  const avgTenVal=avgTen.length?(avgTen.reduce((a,b)=>a+b,0)/avgTen.length):null;
+  $('kpis').innerHTML=`
+    <div class="card"><div class="card-title">Employees</div><div class="kpi-val">${d.length}</div><div class="kpi-sub">avg tenure ${f(avgTenVal)} yrs</div><div class="kpi-desc">People in current filter view</div></div>
+    <div class="card"><div class="card-title">Avg Suggested Base Incr</div><div class="kpi-val ${cc(avg)}">${f(avg)}%</div><div class="kpi-sub">HR pool avg ${f(hravg)}%</div><div class="kpi-desc">My avg raise vs what HR proposed on average</div></div>
+    <div class="card"><div class="card-title">Net Bonus Gap</div><div class="kpi-val ${cc(-netBonusGap)}">${fcs(netBonusGap)}</div><div class="kpi-sub">suggested − pool</div><div class="kpi-desc">Total EUR difference between my bonus and HR bonus</div></div>
+    <div class="card"><div class="card-title">Flags</div><div class="kpi-val" style="color:var(--red)">${hf}</div><div class="kpi-sub">${mf} medium</div><div class="kpi-desc">Anomalies detected: outliers, large gaps, risks</div></div>`;
+}
+
+function rPerson(d){
+  const pp=$('pp');
+  if(d.length!==1){pp.classList.remove('open');return;}
+  const p=d[0]; pp.classList.add('open');
+  $('ppName').textContent=`${p.name||p.id} (${p.id}) — ${p.team} — Rank: ${p.ranking}`;
+  const cmtEl=$('ppComment');
+  if(p.comments){cmtEl.style.display='block';cmtEl.innerHTML=`<span style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.4px;">Manager Notes</span><br>${p.comments}`;}
+  else{cmtEl.style.display='none';}
+  $('ppGrid').innerHTML=[
+    ['Base 2025',fc(p.base_2025)],
+    ['HR Base 2026',fc(p.base_2026_hr)],
+    ['Suggested Base 2026',fc(p.base_2026_sug)],
+    ['Base Gap',`<span class="${cc(p.base_gap_abs)}">${fcs(p.base_gap_abs)} (${f(p.base_gap_pct)}%)</span>`],
+    ['Sug Base Incr',`<span class="${cc(p.base_incr_pct)}">${f(p.base_incr_pct)}% (${fcs(p.base_incr_abs)})</span>`],
+    ['HR Base Incr',`<span class="${cc(p.base_hr_incr_pct)}">${f(p.base_hr_incr_pct)}%</span>`],
+    ['Criticality',p.criticality||'—'],
+    ['Potential',p.potential||'—'],
+    ['Italy Base Algo',fc(p.italy_algo)],
+    ['vs IT Algo',`<span class="${cc(p.base_incr_vs_algo)}">${fcs(p.base_incr_vs_algo)}</span>`],
+    ['HR Bonus 2025',fc(p.bonus_2025_hr)],
+    ['Sug Bonus 2025',fc(p.bonus_2025_sug)],
+    ['Bonus Gap',`<span class="${cc(p.bonus_gap_abs)}">${fcs(p.bonus_gap_abs)} (${f(p.bonus_gap_pct)}%)</span>`],
+    ['Bonus 2024',fc(p.bonus_2024)],
+    ['Bonus Chg vs 24',`<span class="${cc(p.bonus_change_pct)}">${f(p.bonus_change_pct)}% (${fcs(p.bonus_change_abs)})</span>`],
+    ['Base 2024',fc(p.base_2024)],
+    ['Base 2023',fc(p.base_2023)],
+    ['Incr 24→25',`<span class="${cc(p.base_incr_prev_pct)}">${f(p.base_incr_prev_pct)}% (${fcs(p.base_incr_prev_abs)})</span>`],
+    ['Incr 23→24',`<span class="${cc(p.base_incr_2324_pct)}">${f(p.base_incr_2324_pct)}% (${fcs(p.base_incr_2324_abs)})</span>`],
+    ['Tenure',(p.tenure_years!=null?p.tenure_years.toFixed(1):'—')+' y'],
+    ['Hired',p.hire_date||p.hire_date_raw||'—'],
+    ['Bonus/Base %',f(p.bonus_pct_of_base_2025)+'%'],
+  ].map(([l,v])=>`<div class="d-item"><div class="d-label">${l}</div><div class="d-val">${v}</div></div>`).join('');
+
+  const ppColors=[C_GRAY,C_GRAY,C_GRAY,C_AMBER,C_GREEN,C_GRAY,C_AMBER,C_GREEN];
+  charts.pp=new Chart($('ppChart'),{type:'bar',data:{
+    labels:['Base 23','Base 24','Base 25','HR Base 26','Sug Base 26','Bon 24','HR Bon 25','Sug Bon 25'],
+    datasets:[dsArr(p.id,[p.base_2023,p.base_2024,p.base_2025,p.base_2026_hr,p.base_2026_sug,p.bonus_2024,p.bonus_2025_hr,p.bonus_2025_sug],ppColors)]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{...darkScaleOpts},y:{...darkScaleOpts}}}});
+
+  const pf=FL.filter(fl=>fl.person===p.id);
+  $('ppFlags').innerHTML=pf.length?pf.map(fl=>`<div class="flag flag-${fl.severity}"><span class="flag-tag">${fl.type}</span><span class="flag-detail">${fl.detail}</span></div>`).join(''):'<div style="color:var(--text3);font-size:12px;padding:8px;">No flags</div>';
+}
+
+function rCmt(){$('cmt').innerHTML=CM.map(c=>`<p>${c}</p>`).join('');}
+
+function rCharts(d){
+  // Only people with actual financial data
+  const dp=d.filter(p=>p.base_2026_hr!=null||p.base_2026_sug!=null);
+  if(!dp.length) return;
+  const rl=Object.keys(RS).sort().filter(r=>r!=='Unknown'&&(RS[r].avg_base_incr_pct!=null||RS[r].avg_hr_incr_pct!=null));
+  const scaleOpts={x:{...darkScaleOpts},y:{...darkScaleOpts}};
+
+  // 1. Per-person BASE gap (Suggestion − Pool), sorted
+  const gd=dp.filter(p=>p.base_gap_abs!=null&&p.base_gap_abs!==0).sort((a,b)=>a.base_gap_abs-b.base_gap_abs);
+  if(gd.length){
+    charts.cGapPerson=new Chart($('cGapPerson'),{type:'bar',data:{labels:gd.map(p=>p.name||p.id),datasets:[
+      dsArr('Gap',gd.map(p=>p.base_gap_abs),gd.map(p=>p.base_gap_abs>=0?C_GREEN:C_RED))
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>(c.raw>=0?'+':'')+c.raw.toLocaleString('en-US')+' EUR'}}},
+      scales:{x:{...darkScaleOpts,ticks:{maxRotation:90,font:{size:9}}},y:{...darkScaleOpts,title:{display:true,text:'Suggestion − Pool (EUR)'}}}}});
+  }
+
+  // 2. Per-person BONUS gap (Suggestion − Pool), sorted
+  const bgd=dp.filter(p=>p.bonus_gap_abs!=null&&p.bonus_gap_abs!==0).sort((a,b)=>a.bonus_gap_abs-b.bonus_gap_abs);
+  if(bgd.length){
+    charts.cGapBonusPerson=new Chart($('cGapBonusPerson'),{type:'bar',data:{labels:bgd.map(p=>p.name||p.id),datasets:[
+      dsArr('Gap',bgd.map(p=>p.bonus_gap_abs),bgd.map(p=>p.bonus_gap_abs>=0?C_GREEN:C_RED))
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>(c.raw>=0?'+':'')+c.raw.toLocaleString('en-US')+' EUR'}}},
+      scales:{x:{...darkScaleOpts,ticks:{maxRotation:90,font:{size:9}}},y:{...darkScaleOpts,title:{display:true,text:'Suggestion − Pool (EUR)'}}}}});
+  }
+
+  // 3. Triple comparison: Pool vs Algo vs My Suggestion per person (sorted by pool)
+  const td=dp.filter(p=>p.base_2026_hr!=null).sort((a,b)=>(a.base_2026_hr||0)-(b.base_2026_hr||0));
+  if(td.length){
+    charts.cTriple=new Chart($('cTriple'),{type:'bar',data:{labels:td.map(p=>p.name||p.id),datasets:[
+      ds('HR Pool',td.map(p=>p.base_2026_hr),C_AMBER),
+      ds('Italy Base Algo',td.map(p=>p.italy_algo),C_GREEN),
+      ds('My Suggestion',td.map(p=>p.base_2026_sug),'#6e9ecf')
+    ]},options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{...darkScaleOpts,ticks:{maxRotation:90,font:{size:9}}},y:{...darkScaleOpts,title:{display:true,text:'EUR'}}},
+      plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+Number(c.raw||0).toLocaleString('en-US')+' EUR'}}}}});
+  }
+
+  // 4. Base increase by ranking (Suggestion vs Pool avg %)
+  if(rl.length){
+    charts.c2=new Chart($('c2'),{type:'bar',data:{labels:rl,datasets:[
+      ds('My Suggestion Avg %',rl.map(r=>RS[r].avg_base_incr_pct),C_PURPLE),
+      ds('HR Pool Avg %',rl.map(r=>RS[r].avg_hr_incr_pct),C_AMBER)
+    ]},options:{responsive:true,maintainAspectRatio:false,scales:scaleOpts}});
+  }
+
+  // 5. Distribution histogram
+  const inc=dp.map(p=>p.base_incr_pct).filter(v=>v!=null);
+  if(inc.length){
+    const mn=Math.floor(Math.min(...inc)),mx=Math.ceil(Math.max(...inc));
+    const range=mx-mn||1;
+    const bs=Math.max(1,Math.ceil(range/10));
+    const bk={};for(let i=mn;i<=mx;i+=bs)bk[i]=0;
+    inc.forEach(v=>{const b=Math.floor((v-mn)/bs)*bs+mn;bk[b]=(bk[b]||0)+1;});
+    charts.c4=new Chart($('c4'),{type:'bar',data:{
+      labels:Object.keys(bk).map(k=>(+k).toFixed(0)+'% to '+(+k+bs).toFixed(0)+'%'),
+      datasets:[ds('People',Object.values(bk),C_BLUE)]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:scaleOpts}});
+  }
+
+  // 6. Scatter: ranking vs base increase
+  const rlAll=Object.keys(RS).sort().filter(r=>r!=='Unknown');
+  const sd=dp.filter(p=>p.base_incr_pct!=null&&p.ranking!=='Unknown').map(p=>{
+    const ri=rlAll.indexOf(p.ranking);
+    return {x:ri>=0?ri+1:0,y:p.base_incr_pct,label:p.name||p.id,rank:p.ranking};
+  });
+  if(sd.length){
+    charts.c5=new Chart($('c5'),{type:'scatter',data:{datasets:[{data:sd,backgroundColor:C_BLUE,borderColor:C_BLUE,pointRadius:6,pointHoverRadius:9}]},
+      options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{...darkScaleOpts,title:{display:true,text:'Ranking'},
+        ticks:{callback:v=>{const i=Math.round(v)-1;return rlAll[i]?rlAll[i].replace(/\d+ - /,''):v;}}},
+        y:{...darkScaleOpts,title:{display:true,text:'Base Increase %'}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw.label+' ('+c.raw.rank+'): '+c.raw.y+'%'}}}}});
+  }
+}
+
+function rTeamTbl(){
+  const tb=document.querySelector('#tTeam tbody');
+  // Only show teams that have at least one person with financial data
+  tb.innerHTML=Object.entries(TS).filter(([,s])=>s.avg_base_incr_pct!=null||s.avg_hr_incr_pct!=null||s.total_bonus_gap!=null).sort((a,b)=>a[0].localeCompare(b[0])).map(([t,s])=>
+    `<tr><td>${t}</td><td class="mono">${s.count}</td>
+    <td class="mono ${cc(s.avg_base_incr_pct)}">${f(s.avg_base_incr_pct)}</td>
+    <td class="mono">${f(s.avg_hr_incr_pct)}</td>
+    <td class="mono">${f(s.median_base_incr_pct)}</td>
+    <td class="mono ${cc(s.total_base_gap)}">${fc(s.total_base_gap)}</td>
+    <td class="mono ${cc(s.avg_base_gap_pct)}">${f(s.avg_base_gap_pct)}</td>
+    <td class="mono ${cc(s.total_bonus_gap)}">${fc(s.total_bonus_gap)}</td>
+    <td class="mono ${cc(s.total_sug_vs_algo)}">${fc(s.total_sug_vs_algo)}</td>
+    <td class="mono">${s.over_pool_base}/${s.at_pool_base}/${s.under_pool_base}</td>
+    <td class="mono">${f(s.avg_tenure)}</td></tr>`).join('');
+}
+
+function rRankTbl(){
+  const tb=document.querySelector('#tRank tbody');
+  tb.innerHTML=Object.entries(RS).filter(([r])=>r!=='Unknown').sort((a,b)=>String(a[0]).localeCompare(String(b[0]))).map(([r,s])=>
+    `<tr><td>${r}</td><td class="mono">${s.count}</td>
+    <td class="mono ${cc(s.avg_base_incr_pct)}">${f(s.avg_base_incr_pct)}</td>
+    <td class="mono">${f(s.avg_hr_incr_pct)}</td>
+    <td class="mono">${f(s.median_base_incr_pct)}</td>
+    <td class="mono ${cc(s.avg_base_gap_pct)}">${f(s.avg_base_gap_pct)}</td>
+    <td class="mono ${cc(s.avg_sug_vs_algo_pct)}">${f(s.avg_sug_vs_algo_pct)}</td>
+    <td class="mono ${cc(s.avg_bonus_gap_pct)}">${f(s.avg_bonus_gap_pct)}</td>
+    <td class="mono">${f(s.avg_bonus_pct_of_base)}</td></tr>`).join('');
+}
+
+// Build flag index by person id
+let flagIdx={};
+function rebuildFlagIndex(){flagIdx={};FL.forEach(fl=>{if(!flagIdx[fl.person])flagIdx[fl.person]=[];flagIdx[fl.person].push(fl);});}
+rebuildFlagIndex();
+
+function rIndTbl(d){
+  $('indCount').textContent=d.length;
+  const tb=document.querySelector('#tInd tbody');
+  tb.innerHTML=d.map(p=>{
+    const pf=flagIdx[p.id]||[];
+    const pills=pf.map(fl=>`<span class="flag-pill flag-pill-${fl.severity}" title="${fl.detail}">${fl.type}</span>`).join('');
+    return `<tr class="clickable" onclick="fP.value='${p.id}';render();">
+    <td><strong>${p.id}</strong></td>
+    <td>${p.name||''}</td>
+    <td>${p.team}</td>
+    <td class="mono">${p.hire_date||p.hire_date_raw||'—'}</td>
+    <td>${p.ranking}</td>
+    <td class="flags-cell">${pills||'<span class="neu">—</span>'}</td>
+    <td class="mono">${p.criticality||'—'}</td>
+    <td class="mono">${p.potential||'—'}</td>
+    <td class="mono">${fc(p.base_2026_hr)}</td>
+    <td class="mono">${fc(p.base_2026_sug)}</td>
+    <td class="mono ${cc(p.base_incr_pct)}">${f(p.base_incr_pct)}</td>
+    <td class="mono" style="color:var(--accent)">${fc(p.italy_algo)}</td>
+    <td class="mono ${cc(p.base_incr_vs_algo)}">${fcs(p.base_incr_vs_algo)}</td>
+    <td class="mono ${cc(p.base_incr_abs)}">${fcs(p.base_incr_abs)}</td>
+    <td class="mono">${fc(p.bonus_2025_hr)}</td>
+    <td class="mono">${fc(p.bonus_2025_sug)}</td>
+    <td class="mono ${cc(p.bonus_change_pct)}">${f(p.bonus_change_pct)}</td>
+    <td class="mono ${cc(p.bonus_change_abs)}">${fcs(p.bonus_change_abs)}</td>
+    <td class="mono">${fc(p.base_2025)}</td>
+    <td class="mono">${fc(p.bonus_2024)}</td>
+    <td class="mono">${fc(p.base_2024)}</td>
+    <td class="mono">${fc(p.base_2023)}</td>
+    <td class="mono" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--text2);cursor:help;" title="${(p.comments||'').replace(/"/g,'&quot;')}">${p.comments||'—'}</td></tr>`;
+  }).join('');
+}
+
+// Sorting
+let ss={};
+document.querySelectorAll('th[data-c]').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const tbl=th.closest('table');
+    const ci=+th.dataset.c;
+    const k=tbl.id+'_'+ci;
+    ss[k]=!ss[k];
+    tbl.querySelectorAll('th').forEach(h=>h.classList.remove('sorted'));
+    th.classList.add('sorted');
+    th.querySelector('.sa').innerHTML=ss[k]?'&#9650;':'&#9660;';
+    const tb=tbl.querySelector('tbody');
+    const rows=[...tb.querySelectorAll('tr')];
+    rows.sort((a,b)=>{
+      let va=a.cells[ci].textContent.trim(),vb=b.cells[ci].textContent.trim();
+      const na=parseFloat(va.replace(/[^\d.-]/g,'')),nb=parseFloat(vb.replace(/[^\d.-]/g,''));
+      if(!isNaN(na)&&!isNaN(nb))return ss[k]?na-nb:nb-na;
+      return ss[k]?va.localeCompare(vb):vb.localeCompare(va);
+    });
+    rows.forEach(r=>tb.appendChild(r));
+  });
+});
+
+function downloadProfile(){
+  const d=getF();
+  if(d.length!==1){alert('Select a single person first.');return;}
+  const p=d[0];
+  const pf=FL.filter(fl=>fl.person===p.id);
+  const ts=TS[p.team]||{};
+  const rs=RS[p.ranking]||{};
+  const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,BorderStyle,AlignmentType,HeadingLevel,ShadingType,TabStopType,TabStopPosition,VerticalAlign}=docx;
+
+  // Formatters
+  const v=x=>x!=null?Number(x).toLocaleString('en-US',{maximumFractionDigits:0}):'—';
+  const vp=x=>x!=null?Number(x).toFixed(1)+'%':'—';
+  const vs=x=>{if(x==null)return'—';const n=Number(x);return(n>0?'+':'')+n.toLocaleString('en-US',{maximumFractionDigits:0});};
+  const vpSigned=x=>{if(x==null)return'—';const n=Number(x);return(n>0?'+':'')+n.toFixed(1)+'%';};
+
+  // Brand color
+  const BRAND='1F4E79';const BRAND_LIGHT='D6E4F0';const ACCENT_GREEN='2E7D32';const ACCENT_RED='C62828';const GRAY='666666';const LGRAY='F5F5F5';const MGRAY='E0E0E0';
+
+  // Reusable border configs
+  const noBorder={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const noBorders={top:noBorder,bottom:noBorder,left:noBorder,right:noBorder};
+  const thinBorder={style:BorderStyle.SINGLE,size:1,color:'D0D0D0'};
+  const thinBorders={top:thinBorder,bottom:thinBorder,left:thinBorder,right:thinBorder};
+
+  // Spacer
+  const spacer=(h)=>new Paragraph({spacing:{after:h||100},children:[]});
+
+  // Section heading with colored left bar
+  const sectionHead=(text)=>new Paragraph({spacing:{before:200,after:80},
+    border:{left:{style:BorderStyle.SINGLE,size:12,color:BRAND,space:8}},
+    children:[new TextRun({text,bold:true,size:24,font:'Calibri',color:BRAND})]});
+
+  // Table helpers
+  const hdrCell=(text,width)=>new TableCell({
+    borders:noBorders,width:{size:width||5000,type:WidthType.DXA},
+    shading:{type:ShadingType.SOLID,color:BRAND},
+    verticalAlign:VerticalAlign.CENTER,
+    children:[new Paragraph({spacing:{before:40,after:40},indent:{left:80},
+      children:[new TextRun({text,bold:true,size:18,font:'Calibri',color:'FFFFFF'})]})]});
+
+  const labelCell=(text,width)=>new TableCell({
+    borders:thinBorders,width:{size:width||4000,type:WidthType.DXA},
+    shading:{type:ShadingType.SOLID,color:LGRAY},
+    verticalAlign:VerticalAlign.CENTER,
+    children:[new Paragraph({spacing:{before:30,after:30},indent:{left:80},
+      children:[new TextRun({text,size:19,font:'Calibri',color:'333333'})]})]});
+
+  const valCell=(text,width,color)=>new TableCell({
+    borders:thinBorders,width:{size:width||5000,type:WidthType.DXA},
+    verticalAlign:VerticalAlign.CENTER,
+    children:[new Paragraph({spacing:{before:30,after:30},indent:{left:80},
+      children:[new TextRun({text:String(text),bold:true,size:19,font:'Calibri',color:color||'222222'})]})]});
+
+  const dataRow=(label,val,color)=>new TableRow({children:[labelCell(label),valCell(val,undefined,color)]});
+
+  // Multi-column table: 4 cells per row (label, value, label, value)
+  const dataRow2=(l1,v1,l2,v2,c1,c2)=>new TableRow({children:[
+    labelCell(l1,2200),valCell(v1,2800,c1),labelCell(l2,2200),valCell(v2,2800,c2)]});
+
+  // Color for positive/negative values
+  const signColor=(val)=>val==null?GRAY:val>0?ACCENT_GREEN:val<0?ACCENT_RED:'333333';
+
+  // Build analysis notes
+  let notes=[];
+  if(p.base_2023!=null&&p.base_2024!=null&&p.base_2025!=null)
+    notes.push(`Base salary trajectory: ${v(p.base_2023)} (2023) \u2192 ${v(p.base_2024)} (2024) \u2192 ${v(p.base_2025)} (2025) \u2192 ${v(p.base_2026_sug)} (2026 suggested).`);
+  if(p.base_incr_2324_pct!=null&&p.base_incr_prev_pct!=null&&p.base_incr_pct!=null)
+    notes.push(`YoY base increases: ${vp(p.base_incr_2324_pct)} (23\u219224), ${vp(p.base_incr_prev_pct)} (24\u219225), ${vp(p.base_incr_pct)} (25\u219226 suggested).`);
+  if(p.base_gap_abs!=null&&p.base_gap_abs!==0){
+    const dir=p.base_gap_abs>0?'above':'below';
+    notes.push(`Suggested base is ${vs(p.base_gap_abs)} (${vp(p.base_gap_pct)}) ${dir} HR pool allocation.`);
+  }
+  if(p.bonus_gap_abs!=null&&p.bonus_gap_abs!==0){
+    const dir=p.bonus_gap_abs>0?'above':'below';
+    notes.push(`Suggested bonus is ${vs(p.bonus_gap_abs)} (${vp(p.bonus_gap_pct)}) ${dir} HR pool allocation.`);
+  }
+  if(ts.avg_base_incr_pct!=null&&p.base_incr_pct!=null){
+    const diff=p.base_incr_pct-ts.avg_base_incr_pct;
+    if(Math.abs(diff)>1) notes.push(`Base increase is ${Math.abs(diff).toFixed(1)}pp ${diff>0?'above':'below'} team average (${vp(ts.avg_base_incr_pct)}).`);
+  }
+  if(rs.avg_base_incr_pct!=null&&p.base_incr_pct!=null){
+    const diff=p.base_incr_pct-rs.avg_base_incr_pct;
+    if(Math.abs(diff)>1) notes.push(`Base increase is ${Math.abs(diff).toFixed(1)}pp ${diff>0?'above':'below'} ranking-group average (${vp(rs.avg_base_incr_pct)}).`);
+  }
+  if(p.bonus_change_pct!=null&&p.bonus_change_pct<-20)
+    notes.push(`Significant bonus reduction of ${vp(p.bonus_change_pct)} compared to 2024.`);
+  if(p.tenure_years!=null&&p.tenure_years>8&&p.base_incr_pct!=null&&p.base_incr_pct<=0)
+    notes.push(`Long-tenured employee (${p.tenure_years}y) with flat/negative base increase \u2014 potential retention risk.`);
+
+  const children=[
+    // ==================== HEADER ====================
+    new Table({rows:[new TableRow({children:[
+      new TableCell({borders:noBorders,shading:{type:ShadingType.SOLID,color:BRAND},
+        width:{size:10000,type:WidthType.DXA},
+        children:[
+          new Paragraph({spacing:{before:160,after:40},alignment:AlignmentType.CENTER,
+            children:[new TextRun({text:'2026 COMP REVIEW AI AGENT',bold:true,size:32,font:'Calibri',color:'FFFFFF'})]}),
+          new Paragraph({spacing:{after:40},alignment:AlignmentType.CENTER,
+            children:[new TextRun({text:'CONFIDENTIAL \u2014 Employee Profile Report',size:20,font:'Calibri',color:BRAND_LIGHT})]}),
+          new Paragraph({spacing:{after:140},alignment:AlignmentType.CENTER,
+            children:[new TextRun({text:`Generated ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}`,size:16,font:'Calibri',color:BRAND_LIGHT})]}),
+        ]})
+    ]})]}),
+    spacer(160),
+
+    // ==================== QUICK PROFILE ====================
+    sectionHead('Employee Profile'),
+    new Table({rows:[
+      dataRow2('Employee ID',String(p.id),'Name',p.name||'—'),
+      dataRow2('Team / Product Group',p.team,'Ranking',p.ranking),
+      dataRow2('Hire Date',p.hire_date||p.hire_date_raw||'—','Tenure',p.tenure_years?p.tenure_years+' years':'—'),
+      dataRow2('Criticality',String(p.criticality||'—'),'Potential',String(p.potential||'—')),
+      dataRow2('Current Base (2025)',v(p.base_2025),'Bonus/Base Ratio',vp(p.bonus_pct_of_base_2025)),
+    ]}),
+    spacer(),
+  ];
+
+  // ==================== MANAGER NOTES ====================
+  if(p.comments){
+    children.push(sectionHead('Manager Notes'));
+    children.push(new Table({rows:[new TableRow({children:[
+      new TableCell({borders:{top:thinBorder,bottom:thinBorder,left:{style:BorderStyle.SINGLE,size:8,color:BRAND,space:0},right:thinBorder},
+        shading:{type:ShadingType.SOLID,color:'EBF1F8'},
+        width:{size:10000,type:WidthType.DXA},
+        children:[new Paragraph({spacing:{before:80,after:80},indent:{left:120,right:80},
+          children:[new TextRun({text:p.comments,size:20,font:'Calibri',italics:true,color:'333333'})]})]})
+    ]})]}));
+    children.push(spacer());
+  }
+
+  // ==================== BASE SALARY HISTORY ====================
+  children.push(sectionHead('Base Salary History'));
+  children.push(new Table({rows:[
+    new TableRow({children:[hdrCell('Year'),hdrCell('Base Salary'),hdrCell('Increase'),hdrCell('Increase %')]}),
+    new TableRow({children:[
+      valCell('2023'),valCell(v(p.base_2023)),valCell('—',undefined,GRAY),valCell('—',undefined,GRAY)]}),
+    new TableRow({children:[
+      valCell('2024'),valCell(v(p.base_2024)),
+      valCell(vs(p.base_incr_2324_abs),undefined,signColor(p.base_incr_2324_abs)),
+      valCell(vpSigned(p.base_incr_2324_pct),undefined,signColor(p.base_incr_2324_pct))]}),
+    new TableRow({children:[
+      valCell('2025 (Current)'),valCell(v(p.base_2025)),
+      valCell(vs(p.base_incr_prev_abs),undefined,signColor(p.base_incr_prev_abs)),
+      valCell(vpSigned(p.base_incr_prev_pct),undefined,signColor(p.base_incr_prev_pct))]}),
+    new TableRow({children:[
+      new TableCell({borders:thinBorders,shading:{type:ShadingType.SOLID,color:BRAND_LIGHT},
+        children:[new Paragraph({spacing:{before:30,after:30},indent:{left:80},
+          children:[new TextRun({text:'2026 (Suggested)',bold:true,size:19,font:'Calibri',color:BRAND})]})]}),
+      new TableCell({borders:thinBorders,shading:{type:ShadingType.SOLID,color:BRAND_LIGHT},
+        children:[new Paragraph({spacing:{before:30,after:30},indent:{left:80},
+          children:[new TextRun({text:v(p.base_2026_sug),bold:true,size:19,font:'Calibri',color:BRAND})]})]}),
+      new TableCell({borders:thinBorders,shading:{type:ShadingType.SOLID,color:BRAND_LIGHT},
+        children:[new Paragraph({spacing:{before:30,after:30},indent:{left:80},
+          children:[new TextRun({text:vs(p.base_incr_abs),bold:true,size:19,font:'Calibri',color:signColor(p.base_incr_abs)})]})]}),
+      new TableCell({borders:thinBorders,shading:{type:ShadingType.SOLID,color:BRAND_LIGHT},
+        children:[new Paragraph({spacing:{before:30,after:30},indent:{left:80},
+          children:[new TextRun({text:vpSigned(p.base_incr_pct),bold:true,size:19,font:'Calibri',color:signColor(p.base_incr_pct)})]})]})
+    ]}),
+  ]}));
+  children.push(spacer());
+
+  // ==================== CURRENT REVIEW: BASE ====================
+  children.push(sectionHead('2026 Base Salary Review'));
+  children.push(new Table({rows:[
+    new TableRow({children:[hdrCell('Metric',5000),hdrCell('Value',5000)]}),
+    dataRow('HR Pool Base 2026',v(p.base_2026_hr)),
+    dataRow('Suggested Base 2026',v(p.base_2026_sug)),
+    dataRow('Base Gap (Suggested \u2212 Pool)',`${vs(p.base_gap_abs)}  (${vp(p.base_gap_pct)})`,signColor(p.base_gap_abs)),
+    dataRow('Suggested Base Increase',`${vs(p.base_incr_abs)}  (${vp(p.base_incr_pct)})`,signColor(p.base_incr_abs)),
+    dataRow('HR Pool Base Increase',`${vs(p.base_hr_incr_abs)}  (${vp(p.base_hr_incr_pct)})`),
+    dataRow('Italy Base Algo Suggested',v(p.italy_algo)),
+    dataRow('Suggested vs Italy Base Algo',vs(p.base_incr_vs_algo),signColor(p.base_incr_vs_algo)),
+  ]}));
+  children.push(spacer());
+
+  // ==================== CURRENT REVIEW: BONUS ====================
+  children.push(sectionHead('2025 Bonus Review'));
+  children.push(new Table({rows:[
+    new TableRow({children:[hdrCell('Metric',5000),hdrCell('Value',5000)]}),
+    dataRow('Bonus 2024',v(p.bonus_2024)),
+    dataRow('HR Pool Bonus 2025',v(p.bonus_2025_hr)),
+    dataRow('Suggested Bonus 2025',v(p.bonus_2025_sug)),
+    dataRow('Bonus Gap (Suggested \u2212 Pool)',`${vs(p.bonus_gap_abs)}  (${vp(p.bonus_gap_pct)})`,signColor(p.bonus_gap_abs)),
+    dataRow('Bonus Change vs 2024',`${vs(p.bonus_change_abs)}  (${vp(p.bonus_change_pct)})`,signColor(p.bonus_change_abs)),
+    dataRow('Bonus as % of Base',vp(p.bonus_pct_of_base_2025)),
+  ]}));
+  children.push(spacer());
+
+  // ==================== BENCHMARKING ====================
+  children.push(sectionHead('Benchmarking & Context'));
+  children.push(new Table({rows:[
+    new TableRow({children:[hdrCell('Benchmark',4000),hdrCell('Team: '+p.team,3000),hdrCell('Rank: '+p.ranking,3000)]}),
+    new TableRow({children:[
+      labelCell('Avg Base Increase %',4000),
+      valCell(vp(ts.avg_base_incr_pct),3000),valCell(vp(rs.avg_base_incr_pct),3000)]}),
+    new TableRow({children:[
+      labelCell('Median Base Increase %',4000),
+      valCell(vp(ts.median_base_incr_pct),3000),valCell(vp(rs.median_base_incr_pct),3000)]}),
+    new TableRow({children:[
+      labelCell('HR Pool Avg Increase %',4000),
+      valCell(vp(ts.avg_hr_incr_pct),3000),valCell(vp(rs.avg_hr_incr_pct),3000)]}),
+    new TableRow({children:[
+      labelCell('Avg Bonus Change %',4000),
+      valCell(vp(ts.avg_bonus_change_pct),3000),valCell(vp(rs.avg_bonus_change_pct),3000)]}),
+    new TableRow({children:[
+      labelCell('Avg Bonus / Base %',4000),
+      valCell('—',3000,GRAY),valCell(vp(rs.avg_bonus_pct_of_base),3000)]}),
+    new TableRow({children:[
+      labelCell('Avg Base Gap %',4000),
+      valCell(vp(ts.avg_base_gap_pct),3000,signColor(ts.avg_base_gap_pct)),
+      valCell(vp(rs.avg_base_gap_pct),3000,signColor(rs.avg_base_gap_pct))]}),
+  ]}));
+  children.push(spacer());
+
+  // ==================== ANALYSIS NOTES ====================
+  if(notes.length){
+    children.push(sectionHead('Analysis Notes'));
+    notes.forEach(n=>children.push(new Paragraph({spacing:{after:50},indent:{left:200},
+      children:[
+        new TextRun({text:'\u25B8 ',size:18,color:BRAND}),
+        new TextRun({text:n,size:19,font:'Calibri',color:'444444'})
+      ]})));
+    children.push(spacer());
+  }
+
+  // ==================== FLAGS ====================
+  children.push(sectionHead('Flags & Anomalies'));
+  if(pf.length){
+    pf.forEach(fl=>{
+      const isHigh=fl.severity==='High';
+      children.push(new Table({rows:[new TableRow({children:[
+        new TableCell({borders:noBorders,width:{size:1400,type:WidthType.DXA},
+          shading:{type:ShadingType.SOLID,color:isHigh?'FDECEC':'FFF8E6'},
+          children:[new Paragraph({spacing:{before:30,after:30},alignment:AlignmentType.CENTER,
+            children:[new TextRun({text:fl.severity.toUpperCase(),bold:true,size:16,font:'Calibri',
+              color:isHigh?ACCENT_RED:'B8860B'})]})]}),
+        new TableCell({borders:noBorders,width:{size:8600,type:WidthType.DXA},
+          children:[
+            new Paragraph({spacing:{before:30,after:10},indent:{left:80},
+              children:[new TextRun({text:fl.type,bold:true,size:19,font:'Calibri',color:'333333'})]}),
+            new Paragraph({spacing:{after:30},indent:{left:80},
+              children:[new TextRun({text:fl.detail,size:18,font:'Calibri',color:GRAY})]})
+          ]})
+      ]})]}));
+      children.push(spacer(40));
+    });
+  } else {
+    children.push(new Paragraph({spacing:{after:60},indent:{left:200},
+      children:[new TextRun({text:'No flags or anomalies detected.',size:19,font:'Calibri',color:GRAY,italics:true})]}));
+  }
+  children.push(spacer(80));
+
+  // ==================== FOOTER ====================
+  children.push(new Paragraph({border:{top:{style:BorderStyle.SINGLE,size:2,color:BRAND}},spacing:{before:100,after:40},
+    children:[new TextRun({text:'CONFIDENTIAL \u2014 This document is intended for internal compensation review purposes only.',
+      size:16,font:'Calibri',italics:true,color:'999999'})]}));
+  children.push(new Paragraph({children:[
+    new TextRun({text:`2026 Comp Review AI Agent \u2014 ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}`,
+      size:14,font:'Calibri',color:'BBBBBB'})]}));
+
+  const doc=new Document({
+    styles:{default:{document:{run:{font:'Calibri',size:20}}}},
+    sections:[{
+      properties:{page:{margin:{top:600,bottom:600,left:700,right:700}}},
+      children
+    }]
+  });
+
+  Packer.toBlob(doc).then(blob=>{
+    saveAs(blob,`Profile_${p.id}_${(p.name||'employee').replace(/\s+/g,'_')}.docx`);
+  });
+}
+
+// ===================== DASHBOARD REPORT (Word) =====================
+function downloadReport(){
+  if(!P.length){alert('No data loaded.');return;}
+  const d=getFilteredData();
+  if(!d.length){alert('No data matches current filters.');return;}
+
+  const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,BorderStyle,AlignmentType,HeadingLevel,ShadingType,VerticalAlign,PageBreak}=docx;
+
+  // Formatters
+  const v=x=>x!=null?Number(x).toLocaleString('en-US',{maximumFractionDigits:0}):'—';
+  const vp=x=>x!=null?Number(x).toFixed(1)+'%':'—';
+  const vs=x=>{if(x==null)return'—';const n=Number(x);return(n>0?'+':'')+n.toLocaleString('en-US',{maximumFractionDigits:0});};
+  const vpS=x=>{if(x==null)return'—';const n=Number(x);return(n>0?'+':'')+n.toFixed(1)+'%';};
+
+  // Colors
+  const BRAND='1F4E79',BRAND_LIGHT='D6E4F0',GREEN='2E7D32',RED='C62828',GRAY='666666',LGRAY='F5F5F5';
+  const noBorder={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const noBorders={top:noBorder,bottom:noBorder,left:noBorder,right:noBorder};
+  const thinBorder={style:BorderStyle.SINGLE,size:1,color:'D0D0D0'};
+  const thinBorders={top:thinBorder,bottom:thinBorder,left:thinBorder,right:thinBorder};
+  const signC=val=>val==null?GRAY:val>0?GREEN:val<0?RED:'333333';
+  const spacer=h=>new Paragraph({spacing:{after:h||100},children:[]});
+
+  const sectionHead=text=>new Paragraph({spacing:{before:240,after:100},
+    border:{left:{style:BorderStyle.SINGLE,size:12,color:BRAND,space:8}},
+    children:[new TextRun({text,bold:true,size:26,font:'Calibri',color:BRAND})]});
+
+  const subHead=text=>new Paragraph({spacing:{before:160,after:60},
+    children:[new TextRun({text,bold:true,size:22,font:'Calibri',color:'333333'})]});
+
+  // Table cell helpers
+  const hdrCell=(text,w)=>new TableCell({borders:noBorders,width:{size:w||2000,type:WidthType.DXA},
+    shading:{type:ShadingType.SOLID,color:BRAND},verticalAlign:VerticalAlign.CENTER,
+    children:[new Paragraph({spacing:{before:40,after:40},indent:{left:60},
+      children:[new TextRun({text,bold:true,size:17,font:'Calibri',color:'FFFFFF'})]})]});
+
+  const lCell=(text,w)=>new TableCell({borders:thinBorders,width:{size:w||3500,type:WidthType.DXA},
+    shading:{type:ShadingType.SOLID,color:LGRAY},verticalAlign:VerticalAlign.CENTER,
+    children:[new Paragraph({spacing:{before:25,after:25},indent:{left:60},
+      children:[new TextRun({text,size:18,font:'Calibri',color:'333333'})]})]});
+
+  const vCell=(text,w,color)=>new TableCell({borders:thinBorders,width:{size:w||3500,type:WidthType.DXA},
+    verticalAlign:VerticalAlign.CENTER,
+    children:[new Paragraph({spacing:{before:25,after:25},indent:{left:60},
+      children:[new TextRun({text:String(text),bold:true,size:18,font:'Calibri',color:color||'222222'})]})]});
+
+  const kpiRow=(label,val,color)=>new TableRow({children:[lCell(label,5000),vCell(val,5000,color)]});
+
+  // Describe active filters
+  const filters=[];
+  if(fP.value) filters.push('Person: '+fP.value);
+  if(fT.value) filters.push('Team: '+fT.value);
+  if(fR.value) filters.push('Ranking: '+fR.value);
+  if(fS.value) filters.push('Search: "'+fS.value+'"');
+  const filterLabel=filters.length?filters.join(' | '):'All employees (no filters)';
+
+  // ==================== Compute KPIs ====================
+  const totalPool=d.reduce((s,p)=>s+(p.base_2026_hr||0),0);
+  const totalAlgo=d.reduce((s,p)=>s+(p.italy_algo||0),0);
+  const totalSug=d.reduce((s,p)=>s+(p.base_2026_sug||0),0);
+  const sugVsPool=totalSug-totalPool;
+  const sugVsPoolPct=totalPool>0?_r2(sugVsPool/totalPool*100):null;
+  const algoVsPool=totalAlgo-totalPool;
+  const algoVsPoolPct=totalPool>0?_r2(algoVsPool/totalPool*100):null;
+  const sugVsAlgo=totalSug-totalAlgo;
+  const overPool=d.filter(p=>p.base_gap_abs!=null&&p.base_gap_abs>0).length;
+  const atPool=d.filter(p=>p.base_gap_abs!=null&&p.base_gap_abs===0).length;
+  const underPool=d.filter(p=>p.base_gap_abs!=null&&p.base_gap_abs<0).length;
+  const aboveAlgo=d.filter(p=>p.base_incr_vs_algo!=null&&p.base_incr_vs_algo>0).length;
+  const atAlgo=d.filter(p=>p.base_incr_vs_algo!=null&&p.base_incr_vs_algo===0).length;
+  const belowAlgo=d.filter(p=>p.base_incr_vs_algo!=null&&p.base_incr_vs_algo<0).length;
+  const totalBonPool=d.reduce((s,p)=>s+(p.bonus_2025_hr||0),0);
+  const totalBonSug=d.reduce((s,p)=>s+(p.bonus_2025_sug||0),0);
+  const bonGap=totalBonSug-totalBonPool;
+  const bonGapPct=totalBonPool>0?_r2(bonGap/totalBonPool*100):null;
+  const totalBon2024=d.reduce((s,p)=>s+(p.bonus_2024||0),0);
+  const bonYoY=totalBonSug-totalBon2024;
+  const bonYoYpct=totalBon2024>0?_r2(bonYoY/totalBon2024*100):null;
+  const incArr=d.map(p=>p.base_incr_pct).filter(x=>x!=null);
+  const avgIncr=incArr.length?_r2(incArr.reduce((a,b)=>a+b,0)/incArr.length):null;
+  const hrIncArr=d.map(p=>p.base_hr_incr_pct).filter(x=>x!=null);
+  const avgHrIncr=hrIncArr.length?_r2(hrIncArr.reduce((a,b)=>a+b,0)/hrIncArr.length):null;
+  const highFlags=FL.filter(fl=>fl.severity==='High'&&d.some(p=>p.id===fl.person));
+  const medFlags=FL.filter(fl=>fl.severity==='Medium'&&d.some(p=>p.id===fl.person));
+  const tenArr=d.map(p=>p.tenure_years).filter(x=>x!=null);
+  const avgTen=tenArr.length?_r2(tenArr.reduce((a,b)=>a+b,0)/tenArr.length):null;
+
+  // ==================== Build Document ====================
+  const children=[];
+
+  // HEADER BANNER
+  children.push(new Table({rows:[new TableRow({children:[
+    new TableCell({borders:noBorders,shading:{type:ShadingType.SOLID,color:BRAND},
+      width:{size:10000,type:WidthType.DXA},children:[
+        new Paragraph({spacing:{before:200,after:40},alignment:AlignmentType.CENTER,
+          children:[new TextRun({text:'2026 COMP REVIEW AI AGENT',bold:true,size:36,font:'Calibri',color:'FFFFFF'})]}),
+        new Paragraph({spacing:{after:40},alignment:AlignmentType.CENTER,
+          children:[new TextRun({text:'CONFIDENTIAL — Dashboard Report',size:22,font:'Calibri',color:BRAND_LIGHT})]}),
+        new Paragraph({spacing:{after:60},alignment:AlignmentType.CENTER,
+          children:[new TextRun({text:filterLabel,size:18,font:'Calibri',color:BRAND_LIGHT,italics:true})]}),
+        new Paragraph({spacing:{after:160},alignment:AlignmentType.CENTER,
+          children:[new TextRun({text:`Generated ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})} — ${d.length} employees`,size:16,font:'Calibri',color:BRAND_LIGHT})]}),
+      ]})
+  ]})]}));
+  children.push(spacer(200));
+
+  // ==================== EXECUTIVE SUMMARY ====================
+  children.push(sectionHead('Executive Summary'));
+  const sumLines=[];
+  sumLines.push(`This report covers ${d.length} employees${filters.length?' (filtered: '+filterLabel+')':''} with an average tenure of ${avgTen!=null?avgTen.toFixed(1):'\u2014'} years.`);
+  sumLines.push(`Base salary: HR Pool \u20AC${v(totalPool)} \u2192 Italy Base Algo \u20AC${v(totalAlgo)} (${vpS(algoVsPoolPct)} vs pool) \u2192 My Suggestion \u20AC${v(totalSug)} (${vpS(sugVsPoolPct)} vs pool). ${overPool} employees above pool, ${atPool} at pool, ${underPool} below.`);
+  sumLines.push(`Italy Base Algo deviation: My decisions are ${vs(sugVsAlgo)} vs Italy Base Algo \u2014 ${aboveAlgo} above, ${atAlgo} at, ${belowAlgo} below.`);
+  sumLines.push(`Bonus: HR Pool \u20AC${v(totalBonPool)} \u2192 My Suggestion \u20AC${v(totalBonSug)} (${vpS(bonGapPct)} vs pool). YoY vs 2024: ${vpS(bonYoYpct)} (2024 total: \u20AC${v(totalBon2024)}).`);
+  sumLines.push(`Flags: ${highFlags.length} high severity, ${medFlags.length} medium severity.`);
+  sumLines.forEach(line=>children.push(new Paragraph({spacing:{after:60},indent:{left:120},
+    children:[new TextRun({text:'\u25B8 ',size:18,color:BRAND}),new TextRun({text:line,size:19,font:'Calibri',color:'444444'})]})));
+  children.push(spacer());
+
+  // ==================== BASE SALARY KPIs ====================
+  children.push(sectionHead('Base Salary Overview'));
+  children.push(new Table({rows:[
+    new TableRow({children:[hdrCell('Metric',5000),hdrCell('Value',5000)]}),
+    kpiRow('HR Pool Total','\u20AC'+v(totalPool)),
+    kpiRow('Italy Base Algo Total','\u20AC'+v(totalAlgo),BRAND),
+    kpiRow('My Suggestion Total','\u20AC'+v(totalSug),GREEN),
+    kpiRow('Suggestion vs Pool',vs(sugVsPool)+' ('+vp(sugVsPoolPct)+')',signC(sugVsPool)),
+    kpiRow('Suggestion vs Italy Base Algo',vs(sugVsAlgo),signC(sugVsAlgo)),
+    kpiRow('Italy Base Algo vs Pool',vs(algoVsPool)+' ('+vp(algoVsPoolPct)+')',signC(algoVsPool)),
+    kpiRow('Avg Suggested Base Increase',vp(avgIncr),signC(avgIncr)),
+    kpiRow('Avg HR Pool Base Increase',vp(avgHrIncr)),
+    kpiRow('Over / At / Under Pool',overPool+' / '+atPool+' / '+underPool),
+    kpiRow('Above / At / Below IT Algo',aboveAlgo+' / '+atAlgo+' / '+belowAlgo),
+  ]}));
+  children.push(spacer());
+
+  // ==================== BONUS KPIs ====================
+  children.push(sectionHead('Bonus Overview'));
+  children.push(new Table({rows:[
+    new TableRow({children:[hdrCell('Metric',5000),hdrCell('Value',5000)]}),
+    kpiRow('HR Bonus Pool','\u20AC'+v(totalBonPool)),
+    kpiRow('My Bonus Suggestion','\u20AC'+v(totalBonSug),GREEN),
+    kpiRow('Bonus Gap (Sug \u2212 Pool)',vs(bonGap)+' ('+vp(bonGapPct)+')',signC(bonGap)),
+    kpiRow('2024 Bonus Total','\u20AC'+v(totalBon2024)),
+    kpiRow('YoY vs 2024',vs(bonYoY)+' ('+vp(bonYoYpct)+')',signC(bonYoY)),
+  ]}));
+  children.push(spacer());
+
+  // ==================== BY RANKING ====================
+  const rks=Object.entries(RS).filter(([r])=>r!=='Unknown').sort((a,b)=>String(a[0]).localeCompare(String(b[0])));
+  if(rks.length){
+    children.push(sectionHead('Breakdown by Ranking'));
+    const rkRows=[new TableRow({children:[hdrCell('Ranking',2800),hdrCell('#',600),hdrCell('My Avg %',1400),hdrCell('HR Avg %',1400),hdrCell('Gap vs Pool %',1400),hdrCell('vs IT Algo %',1400),hdrCell('Bonus Gap %',1400)]})];
+    rks.forEach(([r,s])=>rkRows.push(new TableRow({children:[
+      vCell(r,2800),vCell(String(s.count),600),
+      vCell(vp(s.avg_base_incr_pct),1400,signC(s.avg_base_incr_pct)),
+      vCell(vp(s.avg_hr_incr_pct),1400),
+      vCell(vp(s.avg_base_gap_pct),1400,signC(s.avg_base_gap_pct)),
+      vCell(vp(s.avg_sug_vs_algo_pct),1400,signC(s.avg_sug_vs_algo_pct)),
+      vCell(vp(s.avg_bonus_gap_pct),1400,signC(s.avg_bonus_gap_pct)),
+    ]})));
+    children.push(new Table({rows:rkRows}));
+    children.push(spacer());
+  }
+
+  // ==================== BY TEAM ====================
+  const tms=Object.entries(TS).filter(([,s])=>s.avg_base_incr_pct!=null||s.avg_hr_incr_pct!=null||s.total_bonus_gap!=null).sort((a,b)=>a[0].localeCompare(b[0]));
+  if(tms.length){
+    children.push(sectionHead('Breakdown by Team'));
+    const tmRows=[new TableRow({children:[hdrCell('Team',2000),hdrCell('#',600),hdrCell('My Avg %',1200),hdrCell('HR Avg %',1200),hdrCell('Base Gap EUR',1400),hdrCell('Bonus Gap EUR',1400),hdrCell('vs IT Algo',1400),hdrCell('Avg Tenure',1200)]})];
+    tms.forEach(([t,s])=>tmRows.push(new TableRow({children:[
+      vCell(t,2000),vCell(String(s.count),600),
+      vCell(vp(s.avg_base_incr_pct),1200,signC(s.avg_base_incr_pct)),
+      vCell(vp(s.avg_hr_incr_pct),1200),
+      vCell(v(s.total_base_gap),1400,signC(s.total_base_gap)),
+      vCell(v(s.total_bonus_gap),1400,signC(s.total_bonus_gap)),
+      vCell(v(s.total_sug_vs_algo),1400,signC(s.total_sug_vs_algo)),
+      vCell(s.avg_tenure!=null?s.avg_tenure.toFixed(1):'—',1200),
+    ]})));
+    children.push(new Table({rows:tmRows}));
+    children.push(spacer());
+  }
+
+  // ==================== INDIVIDUAL DETAIL TABLE ====================
+  children.push(new Paragraph({children:[new PageBreak()]}));
+  children.push(sectionHead('Individual Detail'));
+  // Only people with financial data
+  const dp=d.filter(p=>p.base_2026_hr!=null||p.base_2026_sug!=null);
+  if(dp.length){
+    const iRows=[new TableRow({children:[
+      hdrCell('ID',900),hdrCell('Name',1600),hdrCell('Rank',1100),hdrCell('HR Base',1100),hdrCell('Sug Base',1100),hdrCell('Incr %',800),hdrCell('IT Algo',1000),hdrCell('vs IT Algo',900),hdrCell('HR Bon',900),hdrCell('Sug Bon',900)]})];
+    dp.sort((a,b)=>String(a.id).localeCompare(String(b.id))).forEach(p=>{
+      iRows.push(new TableRow({children:[
+        vCell(String(p.id),900),vCell(p.name||'',1600),
+        vCell(p.ranking.replace(/\d+ - /,''),1100),
+        vCell(v(p.base_2026_hr),1100),vCell(v(p.base_2026_sug),1100,GREEN),
+        vCell(vp(p.base_incr_pct),800,signC(p.base_incr_pct)),
+        vCell(v(p.italy_algo),1000,BRAND),
+        vCell(vs(p.base_incr_vs_algo),900,signC(p.base_incr_vs_algo)),
+        vCell(v(p.bonus_2025_hr),900),vCell(v(p.bonus_2025_sug),900,signC(p.bonus_gap_abs)),
+      ]}));
+    });
+    children.push(new Table({rows:iRows}));
+    children.push(spacer());
+  }
+
+  // ==================== HIGH FLAGS ====================
+  if(highFlags.length){
+    children.push(sectionHead('High Severity Flags'));
+    highFlags.forEach(fl=>{
+      children.push(new Table({rows:[new TableRow({children:[
+        new TableCell({borders:noBorders,width:{size:1200,type:WidthType.DXA},
+          shading:{type:ShadingType.SOLID,color:'FDECEC'},
+          children:[new Paragraph({spacing:{before:30,after:30},alignment:AlignmentType.CENTER,
+            children:[new TextRun({text:'HIGH',bold:true,size:16,font:'Calibri',color:RED})]})]}),
+        new TableCell({borders:noBorders,width:{size:1400,type:WidthType.DXA},
+          children:[new Paragraph({spacing:{before:30,after:30},indent:{left:60},
+            children:[new TextRun({text:fl.person,bold:true,size:18,font:'Calibri',color:'333333'})]})]}),
+        new TableCell({borders:noBorders,width:{size:7400,type:WidthType.DXA},
+          children:[
+            new Paragraph({spacing:{before:30,after:10},indent:{left:60},
+              children:[new TextRun({text:fl.type,bold:true,size:18,font:'Calibri',color:'333333'})]}),
+            new Paragraph({spacing:{after:30},indent:{left:60},
+              children:[new TextRun({text:fl.detail,size:17,font:'Calibri',color:GRAY})]}),
+          ]})
+      ]})]}));
+      children.push(spacer(30));
+    });
+    children.push(spacer());
+  }
+
+  // ==================== FOOTER ====================
+  children.push(new Paragraph({border:{top:{style:BorderStyle.SINGLE,size:2,color:BRAND}},spacing:{before:200,after:40},
+    children:[new TextRun({text:'CONFIDENTIAL \u2014 This document is intended for internal compensation review purposes only.',
+      size:16,font:'Calibri',italics:true,color:'999999'})]}));
+  children.push(new Paragraph({children:[
+    new TextRun({text:`2026 Comp Review AI Agent \u2014 ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}`,
+      size:14,font:'Calibri',color:'BBBBBB'})]}));
+
+  // Build & save
+  const doc=new Document({
+    styles:{default:{document:{run:{font:'Calibri',size:20}}}},
+    sections:[{properties:{page:{margin:{top:600,bottom:600,left:600,right:600},size:{orientation:'landscape'}}},children}]
+  });
+
+  const fname=filters.length?'Report_'+filters.map(f=>f.split(': ')[1]).join('_').replace(/[^a-zA-Z0-9_]/g,''):'Report_Full';
+  Packer.toBlob(doc).then(blob=>saveAs(blob,`${fname}_${new Date().toISOString().slice(0,10)}.docx`));
+}
+
+// --- Download Excel — mirrors Individual table exactly ---
+function downloadExcel(){
+  if(!P.length){alert('No data loaded.');return;}
+  const d=getF();
+  const rnd2=v=>v!=null?Math.round(v*100)/100:null;
+  const rows=d.map(p=>{
+    const pf=flagIdx[p.id]||[];
+    const flags=pf.map(fl=>fl.type+' ('+fl.severity+')').join('; ');
+    return {
+      'Id':p.id,
+      'Name':p.name||'',
+      'Team':p.team||'',
+      'Hire Date':p.hire_date||p.hire_date_raw||'',
+      'Tenure (yrs)':p.tenure_years!=null?Math.round(p.tenure_years*10)/10:null,
+      'Ranking':p.ranking||'',
+      'Flags':flags||'',
+      'Criticality':p.criticality,
+      'Potential':p.potential,
+      '2026 HR Base':p.base_2026_hr,
+      '2026 Suggested Base':p.base_2026_sug,
+      'Base Incr %':rnd2(p.base_incr_pct),
+      'IT Base Algo':p.italy_algo,
+      'vs IT Algo (EUR)':p.base_incr_vs_algo,
+      'Base Incr EUR':p.base_incr_abs,
+      '2025 HR Bonus':p.bonus_2025_hr,
+      '2025 Suggested Bonus':p.bonus_2025_sug,
+      'Bonus Incr %':rnd2(p.bonus_change_pct),
+      'Bonus Incr EUR':p.bonus_change_abs,
+      '2025 Base':p.base_2025,
+      '2024 Bonus':p.bonus_2024,
+      '2024 Base':p.base_2024,
+      '2023 Base':p.base_2023,
+      'Comments':p.comments||'',
+    };
+  });
+
+  const ws=XLSX.utils.json_to_sheet(rows);
+
+  // Auto-size columns
+  const colWidths=Object.keys(rows[0]||{}).map(k=>{
+    const maxLen=Math.max(k.length,
+      ...rows.map(r=>{const v=r[k];return v!=null?String(v).length:0;}));
+    return {wch:Math.min(maxLen+2,30)};
+  });
+  ws['!cols']=colWidths;
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Comp Review');
+  const fname='CompReview_'+new Date().toISOString().slice(0,10)+'.xlsx';
+  XLSX.writeFile(wb,fname);
+}
+
+// ===================== CLIENT-SIDE IMPORT ENGINE =====================
+
+// --- Helpers ---
+function _parseNumber(val){
+  if(val==null) return null;
+  if(typeof val==='number') return isNaN(val)?null:val;
+  let s=String(val).trim().replace(/,/g,'').replace(/[$\u20AC\u00A3]/g,'').replace(/ /g,'');
+  if(s===''||s.toLowerCase()==='n/a'||s==='-'||s.startsWith('#')) return null;
+  const n=parseFloat(s); return isNaN(n)?null:n;
+}
+function _parseDate(val){
+  if(val==null) return null;
+  if(val instanceof Date) return isNaN(val.getTime())?null:val;
+  let s=String(val).trim();
+  if(!s||s.toLowerCase()==='n/a') return null;
+  let d=new Date(s); if(!isNaN(d.getTime())) return d;
+  const pats=[
+    {re:/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,fn:m=>new Date(+m[3],+m[1]-1,+m[2])},
+    {re:/^(\d{1,2})-(\d{1,2})-(\d{4})$/,fn:m=>new Date(+m[3],+m[1]-1,+m[2])},
+    {re:/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/,fn:m=>new Date(+m[3],+m[2]-1,+m[1])},
+  ];
+  for(const{re,fn}of pats){const m=s.match(re);if(m){d=fn(m);if(!isNaN(d.getTime()))return d;}}
+  return null;
+}
+function _mean(a){return a.reduce((s,v)=>s+v,0)/a.length;}
+function _median(a){const s=[...a].sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+function _stdev(a){const m=_mean(a);return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/(a.length-1));}
+const _r2=(v)=>Math.round(v*100)/100;
+
+// --- Column mapping (robust fuzzy) ---
+function _normalizeColumns(headers){
+  const mapping={};
+  // Normalize: lowercase, strip spaces/underscores/parens, keep digits and letters
+  const norm=s=>s.toLowerCase().replace(/[_\-\(\)\/\\]/g,' ').replace(/\s+/g,' ').trim();
+  const lh={};// norm(header) → original header
+  headers.forEach(h=>{lh[norm(h)]=h;});
+  const lhKeys=Object.keys(lh);
+
+  // Helper: find first header matching ANY of the given tests
+  // Each test can be: string (exact norm match), RegExp (test against norm), or function(normKey)=>bool
+  function find(tests){
+    for(const t of tests){
+      for(const k of lhKeys){
+        if(typeof t==='string'&&k===t) return lh[k];
+        if(t instanceof RegExp&&t.test(k)) return lh[k];
+        if(typeof t==='function'&&t(k)) return lh[k];
+      }
+    }
+    return null;
+  }
+
+  // Helper: keyword match — header must contain ALL keywords
+  const has=(...kws)=>(k)=>kws.every(w=>k.includes(w));
+  // Helper: keyword match — header must contain ALL of set1 AND NONE of set2
+  const hasNot=(yes,no)=>(k)=>yes.every(w=>k.includes(w))&&!no.some(w=>k.includes(w));
+
+  // --- Identity ---
+  mapping.id=find(['id','employee id','emp id','person id',/^id$/,has('employee','id')]);
+  mapping.name=find(['name','nome','employee name','full name',has('first','name'),/^name$/]);
+  mapping.team=find(['team','department','dept','productgroup','product group',has('product','group'),/group/,/org/]);
+  mapping.ranking=find(['ranking','rank','rating',has('performance','rating'),has('current','ranking'),/^rank$/,/ranking/]);
+
+  // --- Dates ---
+  mapping.hire_date=find(['hire','hire date','hiredate','start date','date hired','joined','join date',/hire/,/start.?date/,/joined/]);
+
+  // --- Base salary: detect year dynamically ---
+  // Look for "YYYY hr base" or "hr base YYYY" pattern
+  const yrHrBase=find([/\d{4}.*hr.*base/,/hr.*base.*\d{4}/,hasNot(['hr','base'],['suggested','sug','incr','gap','algo'])]);
+  mapping.base_2026_hr=yrHrBase;
+  // "YYYY suggested base" or "suggested base YYYY"
+  const yrSugBase=find([/\d{4}.*suggest.*base/,/suggest.*base.*\d{4}/,hasNot(['suggested','base'],['hr','bonus','incr','gap','algo']),hasNot(['sug','base'],['hr','bonus','incr','gap','algo'])]);
+  mapping.base_2026_suggested=yrSugBase;
+
+  // --- Base increase ---
+  mapping.base_incr_pct_input=find([has('base','incr','%'),has('base','increase','%'),/base.?incr.*%/,/base.?incr.*pct/]);
+  mapping.base_incr_eur_input=find([has('base','incr','eur'),has('base','increase','eur'),/base.?incr.*eur/]);
+
+  // --- Algo ---
+  mapping.italy_algo=find([has('italy','algo'),has('enrico','algo'),'algo',/\balgo\b/,has('algorithm')]);
+  mapping.base_incr_vs_algo=find([has('incr','vs','algo'),has('base','vs','algo'),/vs.?algo/]);
+
+  // --- Bonus: detect year dynamically ---
+  const yrHrBonus=find([/\d{4}.*hr.*bonus/,/hr.*bonus.*\d{4}/,hasNot(['hr','bonus'],['suggested','sug','incr','gap'])]);
+  mapping.bonus_2025_hr=yrHrBonus;
+  const yrSugBonus=find([/\d{4}.*suggest.*bonus/,/suggest.*bonus.*\d{4}/,hasNot(['suggested','bonus'],['hr','incr','gap']),hasNot(['sug','bonus'],['hr','incr','gap'])]);
+  mapping.bonus_2025_suggested=yrSugBonus;
+
+  // --- Bonus increase ---
+  mapping.bonus_incr_pct_input=find([has('bonus','incr','%'),has('bonus','increase','%'),/bonus.?incr.*%/,/bonus.?incr.*pct/]);
+  mapping.bonus_incr_eur_input=find([has('bonus','incr','eur'),has('bonus','increase','eur'),/bonus.?incr.*eur/]);
+
+  // --- Historical bases/bonuses: find by year pattern ---
+  // Current base (latest year base without "hr" or "suggested")
+  const baseYears=lhKeys.filter(k=>/\d{4}/.test(k)&&k.includes('base')&&!k.includes('hr')&&!k.includes('suggest')&&!k.includes('sug')&&!k.includes('incr')&&!k.includes('gap')&&!k.includes('algo'));
+  baseYears.sort((a,b)=>{const ya=a.match(/(\d{4})/),yb=b.match(/(\d{4})/);return(yb?+yb[1]:0)-(ya?+ya[1]:0);});
+  if(baseYears[0]) mapping.base_2025=lh[baseYears[0]];
+  if(baseYears[1]) mapping.base_2024=lh[baseYears[1]];
+  if(baseYears[2]) mapping.base_2023=lh[baseYears[2]];
+  // If not found by year, try generic
+  if(!mapping.base_2025) mapping.base_2025=find([has('current','base'),/current.?base/]);
+
+  const bonusYears=lhKeys.filter(k=>/\d{4}/.test(k)&&k.includes('bonus')&&!k.includes('hr')&&!k.includes('suggest')&&!k.includes('sug')&&!k.includes('incr')&&!k.includes('gap'));
+  bonusYears.sort((a,b)=>{const ya=a.match(/(\d{4})/),yb=b.match(/(\d{4})/);return(yb?+yb[1]:0)-(ya?+ya[1]:0);});
+  if(bonusYears[0]) mapping.bonus_2024=lh[bonusYears[0]];
+
+  // --- Criticality / Potential ---
+  mapping.criticality=find([/criticality/,/crit/,has('criticality')]);
+  mapping.potential=find([/potential/,/pot/,has('potential')]);
+
+  // --- Comments ---
+  mapping.comments=find(['comments','comment','note','notes','remark','remarks',/comment/,/remark/,/note/]);
+
+  // Clean nulls and log
+  for(const k of Object.keys(mapping)){if(mapping[k]==null) delete mapping[k];}
+  const mapped=new Set(Object.values(mapping));
+  const unmapped=headers.filter(h=>!mapped.has(h));
+  if(unmapped.length) console.warn('Unmapped columns:',unmapped);
+  console.log('Column mapping:',mapping);
+  return mapping;
+}
+
+// --- Italy Base Algo ---
+// --- Algo config (read from UI inputs) ---
+function _getAlgoCfg(){
+  const v=k=>{const el=document.querySelector(`[data-algo="${k}"]`);return el?parseFloat(el.value):null;};
+  return {
+    r1_lt36:v('r1_lt36')||1.12, r1_45:v('r1_45')||1.11, r1_55:v('r1_55')||1.10, r1_60:v('r1_60')||1.09, r1_70:v('r1_70')||1.07, r1_gt70:v('r1_gt70')||1.03,
+    r1_floor:v('r1_floor')||35000,
+    r2_lt36:v('r2_lt36')||1.06, r2_55:v('r2_55')||1.05, r2_70:v('r2_70')||1.03, r2_gt70:v('r2_gt70')||1.02,
+    r2_floor:v('r2_floor')||36000,
+    r3h_lt36:v('r3h_lt36')||1.04, r3h_55:v('r3h_55')||1.03, r3h_gt55:v('r3h_gt55')||1.02,
+    r3m_lt36:v('r3m_lt36')||1.03, r3m_55:v('r3m_55')||1.02, r3m_gt55:v('r3m_gt55')||1.01,
+    r3_crit5_le65:v('r3_crit5_le65')||1.02, r3_crit5_gt65:v('r3_crit5_gt65')||1.01,
+    r3_crit4_flat:v('r3_crit4_flat')||1.01,
+    r3_bias_lt40:v('r3_bias_lt40')||1.025, r3_bias_lt55:v('r3_bias_lt55')||1.015,
+    r3_mid_floor:v('r3_mid_floor')||35000,
+    w_crit:v('w_crit')||0.6, w_pot:v('w_pot')||0.4,
+    t_high:v('t_high')||5, t_mid:v('t_mid')||3.5, mid_cap:v('mid_cap')||65000,
+  };
+}
+
+function _italyAlgo(ranking,hrBase,crit,pot,cfg){
+  if(hrBase==null||ranking==null) return null;
+  if(hrBase===0) return 0;
+  if(!cfg) cfg=_getAlgoCfg();
+  const rank=String(ranking).trim();
+  const ceil500=v=>Math.ceil(Math.round(v*100)/100/500)*500; // round to cents first to avoid FP drift
+
+  // Bottom 30% / Bottom 10%: exact salary, no rounding
+  if(rank==='4 - BOTTOM 30% (Next 20%)'||rank==='5 - BOTTOM 10%') return hrBase;
+
+  // Middle ≤ 34k: hard floor at 35k (before any other logic)
+  if(rank==='3 - MIDDLE'&&hrBase<=34000) return cfg.r3_mid_floor;
+
+  let raw=hrBase;
+
+  if(rank==='1 - TOP 10%'){
+    if(hrBase<36000) raw=hrBase*cfg.r1_lt36;
+    else if(hrBase<=45000) raw=hrBase*cfg.r1_45;
+    else if(hrBase<=55000) raw=hrBase*cfg.r1_55;
+    else if(hrBase<=60000) raw=hrBase*cfg.r1_60;
+    else if(hrBase<=70000) raw=hrBase*cfg.r1_70;
+    else raw=hrBase*cfg.r1_gt70;
+    // Floor guarantee for ≤ 34k
+    if(hrBase<=34000) raw=Math.max(cfg.r1_floor,raw);
+  } else if(rank==='2 - TOP 30% (Next 20%)'){
+    if(hrBase<36000) raw=hrBase*cfg.r2_lt36;
+    else if(hrBase<=55000) raw=hrBase*cfg.r2_55;
+    else if(hrBase<=70000) raw=hrBase*cfg.r2_70;
+    else raw=hrBase*cfg.r2_gt70;
+    // Floor guarantee for ≤ 36k
+    if(hrBase<=36000) raw=Math.max(cfg.r2_floor,raw);
+  } else if(rank==='3 - MIDDLE'){
+    const c=crit||0, score=c*cfg.w_crit+(pot||0)*cfg.w_pot;
+    // Priority: Criticality = 5
+    if(c===5){
+      raw=hrBase<=cfg.mid_cap?hrBase*cfg.r3_crit5_le65:hrBase*cfg.r3_crit5_gt65;
+    } else if(hrBase>cfg.mid_cap){
+      raw=hrBase; // no increase above cap (unless crit=5, handled above)
+    } else if(score>=cfg.t_high){
+      if(hrBase<36000) raw=hrBase*cfg.r3h_lt36;
+      else if(hrBase<=55000) raw=hrBase*cfg.r3h_55;
+      else raw=hrBase*cfg.r3h_gt55;
+    } else if(score>=cfg.t_mid){
+      if(c>=4) raw=hrBase*cfg.r3_crit4_flat;
+      else {
+        if(hrBase<36000) raw=hrBase*cfg.r3m_lt36;
+        else if(hrBase<=55000) raw=hrBase*cfg.r3m_55;
+        else raw=hrBase*cfg.r3m_gt55;
+      }
+    } else {
+      // Score < 3.5: criticality ≥ 4 gets +1%, else 0%
+      raw=c>=4?hrBase*cfg.r3_crit4_flat:hrBase;
+    }
+    // Bias floor: protect against under-rating
+    const biasFloor=hrBase<40000?hrBase*cfg.r3_bias_lt40:hrBase<55000?hrBase*cfg.r3_bias_lt55:hrBase;
+    raw=Math.max(raw,biasFloor);
+  }
+
+  return ceil500(raw);
+}
+
+function _italyAlgoV2(ranking,hrBase,crit,pot,cfg){
+  if(hrBase==null||ranking==null) return null;
+  if(hrBase===0) return 0;
+  if(!cfg) cfg=_getAlgoCfg();
+  const rank=String(ranking).trim();
+  const ceil500=v=>Math.ceil(Math.round(v*100)/100/500)*500;
+  const c=crit||0, score=c*cfg.w_crit+(pot||0)*cfg.w_pot;
+
+  // Bottom 30% / Bottom 10%: exact salary, no rounding
+  if(rank==='4 - BOTTOM 30% (Next 20%)'||rank==='5 - BOTTOM 10%') return hrBase;
+
+  // Middle ≤ 34k: special floor based on score
+  if(rank==='3 - MIDDLE'&&hrBase<=34000) return score>=3.5?36000:35500;
+
+  let raw=hrBase;
+
+  if(rank==='1 - TOP 10%'){
+    if(hrBase<36000) raw=hrBase*1.14;
+    else if(hrBase<=45000) raw=hrBase*1.13;
+    else if(hrBase<=55000) raw=hrBase*1.12;
+    else if(hrBase<=60000) raw=hrBase*1.11;
+    else if(hrBase<=70000) raw=hrBase*1.09;
+    else raw=hrBase*1.05;
+    if(hrBase<=34000) raw=Math.max(35000,raw);
+  } else if(rank==='2 - TOP 30% (Next 20%)'){
+    if(hrBase<36000) raw=hrBase*1.07;
+    else if(hrBase<=55000) raw=hrBase*1.06;
+    else if(hrBase<=70000) raw=hrBase*1.04;
+    else raw=hrBase*1.03;
+    if(hrBase<=36000) raw=Math.max(37000,raw);
+  } else if(rank==='3 - MIDDLE'){
+    if(c===5){
+      raw=hrBase<=65000?hrBase*1.04:hrBase*1.03;
+    } else if(hrBase>65000){
+      raw=hrBase;
+    } else {
+      // Score-based increase
+      let scoreRaw;
+      if(score>=5){
+        if(hrBase<36000) scoreRaw=hrBase*1.06;
+        else if(hrBase<=55000) scoreRaw=hrBase*1.05;
+        else scoreRaw=hrBase*1.04;
+      } else if(score>=3.5){
+        if(c>=4) scoreRaw=hrBase*1.02;
+        else {
+          if(hrBase<36000) scoreRaw=hrBase*1.05;
+          else if(hrBase<=55000) scoreRaw=hrBase*1.04;
+          else scoreRaw=hrBase*1.02;
+        }
+      } else {
+        scoreRaw=c>=4?hrBase*1.01:hrBase;
+      }
+      // Score-aware bias floor
+      let biasFloor;
+      if(hrBase<=40000){
+        biasFloor=score>=3.5?hrBase*1.035:hrBase*1.025;
+      } else if(hrBase<55000){
+        biasFloor=score>=3.5?hrBase*1.025:hrBase*1.015;
+      } else {
+        biasFloor=hrBase;
+      }
+      raw=Math.max(scoreRaw,biasFloor);
+    }
+  }
+
+  return ceil500(raw);
+}
+
+// Dispatcher: calls v1 or v2 based on selector
+function _runAlgo(ranking,hrBase,crit,pot,cfg){
+  if(ALGO_VERSION==='v2'){
+    const r=_italyAlgoV2(ranking,hrBase,crit,pot,cfg);
+    console.log(`[v2] rank=${ranking} hrBase=${hrBase} crit=${crit} pot=${pot} => ${r}`);
+    return r;
+  }
+  const r=_italyAlgo(ranking,hrBase,crit,pot,cfg);
+  console.log(`[v1] rank=${ranking} hrBase=${hrBase} crit=${crit} pot=${pot} => ${r}`);
+  return r;
+}
+
+// --- Compute per-person metrics ---
+function _computeMetrics(rows,colMap){
+  const g=(r,key)=>r[colMap[key]!=null?colMap[key]:'']; // safe getter
+  return rows.map(r=>{
+    const p={};
+    p.id=String(g(r,'id')||'Unknown');
+    p.name=String(g(r,'name')||'');
+    p.team=String(g(r,'team')||'Unknown');
+    p.ranking=String(g(r,'ranking')||'Unknown');
+    p.comments=String(g(r,'comments')||'').trim();
+    p.criticality=_parseNumber(g(r,'criticality'));
+    p.potential=_parseNumber(g(r,'potential'));
+
+    const hireRaw=g(r,'hire_date');
+    const hd=_parseDate(hireRaw);
+    p.hire_date=hd?hd.toISOString().slice(0,10):'';
+    p.hire_date_raw=hd?p.hire_date:String(hireRaw||'');
+    if(hd){p.tenure_years=Math.round((Date.now()-hd.getTime())/(365.25*864e5)*10)/10;}else{p.tenure_years=null;}
+
+    p.base_2026_hr=_parseNumber(g(r,'base_2026_hr'));
+    p.base_2026_sug=_parseNumber(g(r,'base_2026_suggested'));
+    p.bonus_2025_hr=_parseNumber(g(r,'bonus_2025_hr'));
+    p.bonus_2025_sug=_parseNumber(g(r,'bonus_2025_suggested'));
+    p.base_2025=_parseNumber(g(r,'base_2025'));
+    p.bonus_2024=_parseNumber(g(r,'bonus_2024'));
+    p.base_2024=_parseNumber(g(r,'base_2024'));
+    p.base_2023=_parseNumber(g(r,'base_2023'));
+
+    // Italy Base Algo
+    const algoInput=_parseNumber(g(r,'italy_algo'));
+    p.italy_algo=algoInput!=null?_r2(algoInput):_runAlgo(p.ranking,p.base_2026_hr,p.criticality,p.potential);
+    const vsAlgoInput=_parseNumber(g(r,'base_incr_vs_algo'));
+    p.base_incr_vs_algo=vsAlgoInput!=null?_r2(vsAlgoInput):(p.base_2026_sug!=null&&p.italy_algo!=null?_r2(p.base_2026_sug-p.italy_algo):null);
+
+    const biPct=_parseNumber(g(r,'base_incr_pct_input'));
+    const biEur=_parseNumber(g(r,'base_incr_eur_input'));
+    const boPct=_parseNumber(g(r,'bonus_incr_pct_input'));
+    const boEur=_parseNumber(g(r,'bonus_incr_eur_input'));
+
+    // Base increase % (decimal * 100)
+    if(biPct!=null){p.base_incr_pct=_r2(biPct*100);}
+    else if(p.base_2025&&p.base_2026_sug&&p.base_2025>0){p.base_incr_pct=_r2((p.base_2026_sug-p.base_2025)/p.base_2025*100);}
+    else{p.base_incr_pct=null;}
+
+    if(biEur!=null){p.base_incr_abs=_r2(biEur);}
+    else if(p.base_2025!=null&&p.base_2026_sug!=null){p.base_incr_abs=_r2(p.base_2026_sug-p.base_2025);}
+    else{p.base_incr_abs=null;}
+
+    // HR pool base increase
+    if(p.base_2025&&p.base_2026_hr&&p.base_2025>0){
+      p.base_hr_incr_abs=_r2(p.base_2026_hr-p.base_2025);
+      p.base_hr_incr_pct=_r2((p.base_2026_hr-p.base_2025)/p.base_2025*100);
+    }else{p.base_hr_incr_abs=null;p.base_hr_incr_pct=null;}
+
+    // Base gap
+    if(p.base_2026_sug!=null&&p.base_2026_hr!=null){
+      p.base_gap_abs=_r2(p.base_2026_sug-p.base_2026_hr);
+      p.base_gap_pct=p.base_2026_hr>0?_r2((p.base_2026_sug-p.base_2026_hr)/p.base_2026_hr*100):null;
+    }else{p.base_gap_abs=null;p.base_gap_pct=null;}
+
+    // Bonus: if HR bonus is 0, treat as no bonus allocated
+    if(p.bonus_2025_hr===0){p.bonus_2025_sug=0;p.bonus_gap_abs=0;p.bonus_gap_pct=0;p.bonus_change_pct=null;p.bonus_change_abs=null;}
+    else{
+      // Bonus gap
+      if(p.bonus_2025_sug!=null&&p.bonus_2025_hr!=null){
+        p.bonus_gap_abs=_r2(p.bonus_2025_sug-p.bonus_2025_hr);
+        if(p.bonus_2025_hr>0) p.bonus_gap_pct=_r2((p.bonus_2025_sug-p.bonus_2025_hr)/p.bonus_2025_hr*100);
+        else p.bonus_gap_pct=null;
+      }else{p.bonus_gap_abs=null;p.bonus_gap_pct=null;}
+
+      // Bonus change vs prior year (decimal * 100)
+      if(boPct!=null){p.bonus_change_pct=_r2(boPct*100);}
+      else if(p.bonus_2024!=null&&p.bonus_2025_sug!=null&&p.bonus_2024>0){p.bonus_change_pct=_r2((p.bonus_2025_sug-p.bonus_2024)/p.bonus_2024*100);}
+      else{p.bonus_change_pct=null;}
+
+      if(boEur!=null){p.bonus_change_abs=_r2(boEur);}
+      else if(p.bonus_2024!=null&&p.bonus_2025_sug!=null){p.bonus_change_abs=_r2(p.bonus_2025_sug-p.bonus_2024);}
+      else{p.bonus_change_abs=null;}
+    }
+
+    // Base increase 2024->2025
+    if(p.base_2024&&p.base_2025&&p.base_2024>0){
+      p.base_incr_prev_abs=_r2(p.base_2025-p.base_2024);
+      p.base_incr_prev_pct=_r2((p.base_2025-p.base_2024)/p.base_2024*100);
+    }else{p.base_incr_prev_abs=null;p.base_incr_prev_pct=null;}
+
+    // Base increase 2023->2024
+    if(p.base_2023&&p.base_2024&&p.base_2023>0){
+      p.base_incr_2324_abs=_r2(p.base_2024-p.base_2023);
+      p.base_incr_2324_pct=_r2((p.base_2024-p.base_2023)/p.base_2023*100);
+    }else{p.base_incr_2324_abs=null;p.base_incr_2324_pct=null;}
+
+    // Total comp
+    p.total_comp_2025=(p.base_2025!=null&&p.bonus_2025_sug!=null)?p.base_2025+p.bonus_2025_sug:null;
+
+    // Bonus as % of base
+    p.bonus_pct_of_base_2025=(p.base_2025&&p.bonus_2025_sug!=null&&p.base_2025>0)?_r2(p.bonus_2025_sug/p.base_2025*100):null;
+
+    return p;
+  });
+}
+
+// --- Team stats ---
+function _computeTeamStats(people){
+  const teams={};
+  people.forEach(p=>{if(!teams[p.team])teams[p.team]=[];teams[p.team].push(p);});
+  const out={};
+  for(const[team,members]of Object.entries(teams)){
+    const incrs=members.map(p=>p.base_incr_pct).filter(v=>v!=null);
+    const hrIncrs=members.map(p=>p.base_hr_incr_pct).filter(v=>v!=null);
+    const bonuses=members.map(p=>p.bonus_change_pct).filter(v=>v!=null);
+    const baseGaps=members.map(p=>p.base_gap_abs).filter(v=>v!=null);
+    const baseGapPcts=members.map(p=>p.base_gap_pct).filter(v=>v!=null);
+    const bonusGaps=members.map(p=>p.bonus_gap_abs).filter(v=>v!=null);
+    const bonusGapPcts=members.map(p=>p.bonus_gap_pct).filter(v=>v!=null);
+    const tenures=members.map(p=>p.tenure_years).filter(v=>v!=null);
+    out[team]={
+      count:members.length,
+      avg_base_incr_pct:incrs.length?_r2(_mean(incrs)):null,
+      median_base_incr_pct:incrs.length?_r2(_median(incrs)):null,
+      min_base_incr_pct:incrs.length?_r2(Math.min(...incrs)):null,
+      max_base_incr_pct:incrs.length?_r2(Math.max(...incrs)):null,
+      std_base_incr_pct:incrs.length>1?_r2(_stdev(incrs)):null,
+      avg_hr_incr_pct:hrIncrs.length?_r2(_mean(hrIncrs)):null,
+      avg_bonus_change_pct:bonuses.length?_r2(_mean(bonuses)):null,
+      avg_tenure:tenures.length?_r2(_mean(tenures)*10)/10:null,
+      total_base_gap:baseGaps.length?Math.round(baseGaps.reduce((a,b)=>a+b,0)):null,
+      avg_base_gap_pct:baseGapPcts.length?_r2(_mean(baseGapPcts)):null,
+      total_bonus_gap:bonusGaps.length?Math.round(bonusGaps.reduce((a,b)=>a+b,0)):null,
+      avg_bonus_gap_pct:bonusGapPcts.length?_r2(_mean(bonusGapPcts)):null,
+      over_pool_base:members.filter(p=>p.base_gap_abs!=null&&p.base_gap_abs>0).length,
+      under_pool_base:members.filter(p=>p.base_gap_abs!=null&&p.base_gap_abs<0).length,
+      at_pool_base:members.filter(p=>p.base_gap_abs!=null&&p.base_gap_abs===0).length,
+      total_sug_vs_algo:(()=>{const v=members.filter(p=>p.base_incr_vs_algo!=null);return v.length?Math.round(v.reduce((s,p)=>s+p.base_incr_vs_algo,0)):null;})(),
+      avg_sug_vs_algo_pct:(()=>{const v=members.filter(p=>p.base_incr_vs_algo!=null&&p.italy_algo>0);return v.length?_r2(_mean(v.map(p=>p.base_incr_vs_algo/p.italy_algo*100))):null;})(),
+    };
+  }
+  return out;
+}
+
+// --- Ranking stats ---
+function _computeRankingStats(people){
+  const ranks={};
+  people.forEach(p=>{if(!ranks[p.ranking])ranks[p.ranking]=[];ranks[p.ranking].push(p);});
+  const out={};
+  for(const[rank,members]of Object.entries(ranks)){
+    const incrs=members.map(p=>p.base_incr_pct).filter(v=>v!=null);
+    const hrIncrs=members.map(p=>p.base_hr_incr_pct).filter(v=>v!=null);
+    const bonuses=members.map(p=>p.bonus_change_pct).filter(v=>v!=null);
+    const bonusPcts=members.map(p=>p.bonus_pct_of_base_2025).filter(v=>v!=null);
+    const baseGapPcts=members.map(p=>p.base_gap_pct).filter(v=>v!=null);
+    const bonusGapPcts=members.map(p=>p.bonus_gap_pct).filter(v=>v!=null);
+    out[rank]={
+      count:members.length,
+      avg_base_incr_pct:incrs.length?_r2(_mean(incrs)):null,
+      median_base_incr_pct:incrs.length?_r2(_median(incrs)):null,
+      min_base_incr_pct:incrs.length?_r2(Math.min(...incrs)):null,
+      max_base_incr_pct:incrs.length?_r2(Math.max(...incrs)):null,
+      avg_hr_incr_pct:hrIncrs.length?_r2(_mean(hrIncrs)):null,
+      avg_bonus_change_pct:bonuses.length?_r2(_mean(bonuses)):null,
+      avg_bonus_pct_of_base:bonusPcts.length?_r2(_mean(bonusPcts)):null,
+      avg_base_gap_pct:baseGapPcts.length?_r2(_mean(baseGapPcts)):null,
+      avg_bonus_gap_pct:bonusGapPcts.length?_r2(_mean(bonusGapPcts)):null,
+      avg_sug_vs_algo_pct:(()=>{const v=members.filter(p=>p.base_incr_vs_algo!=null&&p.italy_algo>0);return v.length?_r2(_mean(v.map(p=>p.base_incr_vs_algo/p.italy_algo*100))):null;})(),
+    };
+  }
+  return out;
+}
+
+// --- Anomaly detection ---
+function _detectAnomalies(people,teamStats,rankingStats){
+  const flags=[];
+  for(const p of people){
+    const pid=p.id,team=p.team,rank=p.ranking;
+    const ts=teamStats[team]||{}, rs=rankingStats[rank]||{};
+
+    // 1: Team outlier
+    if(p.base_incr_pct!=null&&ts.avg_base_incr_pct!=null&&ts.std_base_incr_pct!=null){
+      const std=ts.std_base_incr_pct&&ts.std_base_incr_pct>0?ts.std_base_incr_pct:1;
+      const z=(p.base_incr_pct-ts.avg_base_incr_pct)/std;
+      if(Math.abs(z)>1.5){
+        const dir=z>0?'above':'below';
+        flags.push({person:pid,team,ranking:rank,type:'Team Outlier - Base Increase',
+          severity:Math.abs(z)>2?'High':'Medium',
+          detail:`Base increase ${p.base_incr_pct}% is ${Math.abs(Math.round(z*10)/10)} std devs ${dir} team avg (${ts.avg_base_incr_pct}%)`});
+      }
+    }
+    // 2: Ranking misalignment
+    if(p.base_incr_pct!=null&&rs.avg_base_incr_pct!=null){
+      const diff=p.base_incr_pct-rs.avg_base_incr_pct;
+      if(rs.avg_base_incr_pct&&Math.abs(diff)>3){
+        flags.push({person:pid,team,ranking:rank,type:'Ranking Misalignment - Base Increase',
+          severity:Math.abs(diff)>5?'High':'Medium',
+          detail:`Base increase ${p.base_incr_pct}% vs ranking-group avg ${rs.avg_base_incr_pct}% (diff: ${Math.round(diff*10)/10}pp)`});
+      }
+    }
+    // 3: Bonus/base divergence
+    if(p.bonus_change_abs!=null&&p.base_incr_pct!=null&&p.bonus_change_abs<0&&p.base_incr_pct>3){
+      flags.push({person:pid,team,ranking:rank,type:'Bonus/Base Divergence',severity:'Medium',
+        detail:`Bonus decreased by ${Math.abs(p.bonus_change_abs)} while base increased ${p.base_incr_pct}%`});
+    }
+    // 4: Zero/negative
+    if(p.base_incr_pct!=null&&p.base_incr_pct<=0){
+      flags.push({person:pid,team,ranking:rank,type:'Zero/Negative Base Increase',severity:'High',
+        detail:`Base increase is ${p.base_incr_pct}% (flat or decrease)`});
+    }
+    // 5: YoY volatility
+    if(p.base_incr_pct!=null&&p.base_incr_prev_pct!=null){
+      const swing=Math.abs(p.base_incr_pct-p.base_incr_prev_pct);
+      if(swing>5){
+        flags.push({person:pid,team,ranking:rank,type:'YoY Increase Volatility',severity:'Medium',
+          detail:`Base increase changed from ${p.base_incr_prev_pct}% (24→25) to ${p.base_incr_pct}% (25→26), swing of ${Math.round(swing*10)/10}pp`});
+      }
+    }
+    // 6: Tenure risk
+    if(p.tenure_years!=null&&p.base_incr_pct!=null&&ts.avg_base_incr_pct!=null){
+      if(p.tenure_years>5&&p.base_incr_pct<ts.avg_base_incr_pct-2){
+        flags.push({person:pid,team,ranking:rank,type:'Tenure Risk - Below Avg Increase',severity:'Medium',
+          detail:`Tenure ${p.tenure_years}y with base increase ${p.base_incr_pct}% vs team avg ${ts.avg_base_incr_pct}% — retention risk?`});
+      }
+    }
+    // 7: Base over/under pool
+    if(p.base_gap_pct!=null&&Math.abs(p.base_gap_pct)>5){
+      const dir=p.base_gap_pct>0?'OVER':'UNDER';
+      flags.push({person:pid,team,ranking:rank,type:`Base ${dir} Pool`,
+        severity:Math.abs(p.base_gap_pct)>10?'High':'Medium',
+        detail:`Suggested base ${dir.toLowerCase()} HR pool by ${Math.abs(p.base_gap_abs)} (${Math.abs(p.base_gap_pct)}%): HR=${p.base_2026_hr}, Suggested=${p.base_2026_sug}`});
+    }
+    // 8: Bonus over/under pool
+    if(p.bonus_gap_abs!=null&&Math.abs(p.bonus_gap_abs)>0){
+      const dir=p.bonus_gap_abs>0?'OVER':'UNDER';
+      const sev=Math.abs(p.bonus_gap_pct||0)>30?'High':Math.abs(p.bonus_gap_abs)>500?'Medium':null;
+      if(sev){
+        flags.push({person:pid,team,ranking:rank,type:`Bonus ${dir} Pool`,severity:sev,
+          detail:`Suggested bonus ${dir.toLowerCase()} HR pool by ${Math.abs(p.bonus_gap_abs)} (${Math.abs(p.bonus_gap_pct||0)}%): HR=${p.bonus_2025_hr}, Suggested=${p.bonus_2025_sug}`});
+      }
+    }
+    // 9: Top performer under pool
+    if(p.base_gap_abs!=null&&p.base_gap_abs<0){
+      if(rank&&(rank.toLowerCase().includes('top 10')||rank.startsWith('1'))){
+        flags.push({person:pid,team,ranking:rank,type:'Top Performer Under Pool',severity:'High',
+          detail:`Ranked '${rank}' but suggested base (${p.base_2026_sug}) is BELOW HR pool (${p.base_2026_hr}). Gap: ${p.base_gap_abs}`});
+      }
+    }
+  }
+  return flags;
+}
+
+// --- Commentary ---
+function _generateCommentary(people,teamStats,rankingStats,flags){
+  const comments=[];
+  const dp=people.filter(p=>p.base_2026_hr!=null||p.base_2026_sug!=null);
+  const withData=dp.length;
+  const total=people.length;
+  const teams=Object.keys(teamStats).filter(t=>teamStats[t].avg_base_incr_pct!=null).length;
+  const allIncrs=dp.map(p=>p.base_incr_pct).filter(v=>v!=null);
+  const allHrIncrs=dp.map(p=>p.base_hr_incr_pct).filter(v=>v!=null);
+  const baseGaps=dp.map(p=>p.base_gap_abs).filter(v=>v!=null);
+  const bonusGaps=dp.map(p=>p.bonus_gap_abs).filter(v=>v!=null);
+  const highFlags=flags.filter(f=>f.severity==='High');
+  const medFlags=flags.filter(f=>f.severity==='Medium');
+  const fc=v=>v!=null?Number(v).toLocaleString('en-US',{maximumFractionDigits:0}):'—';
+
+  // Line 1: Overview
+  const avgIncr=allIncrs.length?_mean(allIncrs).toFixed(1):'—';
+  const medIncr=allIncrs.length?_median(allIncrs).toFixed(1):'—';
+  const hrAvg=allHrIncrs.length?_mean(allHrIncrs).toFixed(1):'—';
+  comments.push(`<strong>Overview:</strong> ${total} employees (${withData} with comp data) across ${teams} teams &mdash; Avg suggested base increase <strong>${avgIncr}%</strong> (median ${medIncr}%) vs HR pool avg <strong>${hrAvg}%</strong>`);
+
+  // Line 2: Base budget
+  const totalPool=dp.reduce((s,p)=>s+(p.base_2026_hr||0),0);
+  const totalSug=dp.reduce((s,p)=>s+(p.base_2026_sug||0),0);
+  const totalAlgo=dp.reduce((s,p)=>s+(p.italy_algo||0),0);
+  const baseDelta=totalSug-totalPool;
+  const overBase=baseGaps.filter(g=>g>0).length,underBase=baseGaps.filter(g=>g<0).length,atBase=baseGaps.filter(g=>g===0).length;
+  comments.push(`<strong>Base salary:</strong> HR Pool ${fc(totalPool)} &rarr; Italy Base Algo ${fc(totalAlgo)} &rarr; My Suggestion ${fc(totalSug)} &mdash; Delta vs pool: <strong>${(baseDelta>=0?'+':'')+fc(baseDelta)}</strong> (${overBase} over / ${atBase} at / ${underBase} under pool)`);
+
+  // Line 3: Bonus budget
+  const totalBonPool=dp.reduce((s,p)=>s+(p.bonus_2025_hr||0),0);
+  const totalBonSug=dp.reduce((s,p)=>s+(p.bonus_2025_sug||0),0);
+  const bonDelta=totalBonSug-totalBonPool;
+  const overBon=bonusGaps.filter(g=>g>0).length,underBon=bonusGaps.filter(g=>g<0).length,atBon=bonusGaps.filter(g=>g===0).length;
+  comments.push(`<strong>Bonus:</strong> HR Pool ${fc(totalBonPool)} &rarr; My Suggestion ${fc(totalBonSug)} &mdash; Delta vs pool: <strong>${(bonDelta>=0?'+':'')+fc(bonDelta)}</strong> (${overBon} over / ${atBon} at / ${underBon} under pool)`);
+
+  // Line 4: Flags & team extremes
+  const tsArr=Object.entries(teamStats).filter(([,s])=>s.avg_base_incr_pct!=null);
+  let teamInfo='';
+  if(tsArr.length){
+    const best=tsArr.reduce((a,b)=>(b[1].avg_base_incr_pct??-999)>(a[1].avg_base_incr_pct??-999)?b:a);
+    const worst=tsArr.reduce((a,b)=>(b[1].avg_base_incr_pct??999)<(a[1].avg_base_incr_pct??999)?b:a);
+    teamInfo=` &mdash; Highest increase: <strong>${best[0]}</strong> (${best[1].avg_base_incr_pct}%) &mdash; Lowest: <strong>${worst[0]}</strong> (${worst[1].avg_base_incr_pct}%)`;
+  }
+  comments.push(`<strong>Flags:</strong> ${highFlags.length} high + ${medFlags.length} medium${teamInfo}`);
+
+  return comments;
+}
+
+// --- Import handler ---
+// --- Algo Apply / Reset ---
+function applyAlgo(){
+  if(!P.length) return;
+  const cfg=_getAlgoCfg();
+  const totalHrBudget=P.reduce((s,p)=>s+(p.base_2026_hr||0),0);
+  const totalSugBefore=P.reduce((s,p)=>s+(p.base_2026_sug||0),0);
+  const totalAlgoBefore=P.reduce((s,p)=>s+(p.italy_algo||0),0);
+
+  // Recalculate algo for each person
+  P.forEach(p=>{
+    p.italy_algo=_runAlgo(p.ranking,p.base_2026_hr,p.criticality,p.potential,cfg);
+    p.base_incr_vs_algo=(p.base_2026_sug!=null&&p.italy_algo!=null)?_r2(p.base_2026_sug-p.italy_algo):null;
+  });
+
+  const totalAlgoAfter=P.reduce((s,p)=>s+(p.italy_algo||0),0);
+  const deltaVsBudget=totalAlgoAfter-totalHrBudget;
+  const deltaVsSug=totalAlgoAfter-totalSugBefore;
+  const overAlgo=P.filter(p=>p.base_incr_vs_algo!=null&&p.base_incr_vs_algo>0).length;
+  const underAlgo=P.filter(p=>p.base_incr_vs_algo!=null&&p.base_incr_vs_algo<0).length;
+  const atAlgo=P.filter(p=>p.base_incr_vs_algo!=null&&p.base_incr_vs_algo===0).length;
+
+  $('algoImpact').innerHTML=`
+    <div class="d-item"><div class="d-label">HR Budget Total</div><div class="d-val">${fc(totalHrBudget)}</div></div>
+    <div class="d-item"><div class="d-label">IT Algo Total</div><div class="d-val" style="color:var(--accent)">${fc(totalAlgoAfter)}</div></div>
+    <div class="d-item"><div class="d-label">IT Algo vs Budget</div><div class="d-val ${cc(deltaVsBudget)}">${fcs(deltaVsBudget)}</div><div class="kpi-sub">${deltaVsBudget!==0?((deltaVsBudget/totalHrBudget*100).toFixed(2)+'%'):'—'}</div></div>
+    <div class="d-item"><div class="d-label">IT Algo vs Suggested</div><div class="d-val ${cc(deltaVsSug)}">${fcs(deltaVsSug)}</div></div>
+    <div class="d-item"><div class="d-label">Suggested Total</div><div class="d-val">${fc(totalSugBefore)}</div></div>
+    <div class="d-item"><div class="d-label">IT Algo Change</div><div class="d-val ${cc(totalAlgoAfter-totalAlgoBefore)}">${fcs(totalAlgoAfter-totalAlgoBefore)}</div><div class="kpi-sub">vs previous algo</div></div>
+    <div class="d-item"><div class="d-label">Sug > Algo / = / <</div><div class="d-val">${overAlgo} / ${atAlgo} / ${underAlgo}</div></div>
+    <div class="d-item"><div class="d-label">People</div><div class="d-val">${P.length}</div></div>`;
+
+  rebuildFlagIndex();
+  render();
+}
+
+const _algoDefaults={
+  r1_lt36:1.12,r1_45:1.11,r1_55:1.10,r1_60:1.09,r1_70:1.07,r1_gt70:1.03,r1_floor:35000,
+  r2_lt36:1.06,r2_55:1.05,r2_70:1.03,r2_gt70:1.02,r2_floor:36000,
+  r3h_lt36:1.04,r3h_55:1.03,r3h_gt55:1.02,
+  r3m_lt36:1.03,r3m_55:1.02,r3m_gt55:1.01,
+  r3_crit5_le65:1.02,r3_crit5_gt65:1.01,r3_crit4_flat:1.01,
+  r3_bias_lt40:1.025,r3_bias_lt55:1.015,r3_mid_floor:35000,
+  w_crit:0.6,w_pot:0.4,t_high:5,t_mid:3.5,mid_cap:65000};
+function resetAlgo(){
+  for(const[k,v]of Object.entries(_algoDefaults)){
+    const el=document.querySelector(`[data-algo="${k}"]`);
+    if(el) el.value=v;
+  }
+  $('algoImpact').innerHTML='';
+  if(P.length) applyAlgo();
+}
+
+$('xlsxInput').addEventListener('change',function(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(evt){
+    try{
+      const data=new Uint8Array(evt.target.result);
+      const wb=XLSX.read(data,{type:'array',cellDates:true});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      // Auto-detect header row
+      const _allRowsFull=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+      const _knownFull=['id','name','ranking','team','criticality','hire date','hiredate','hired','join date','hr base'];
+      let _hdrIdxFull=0;
+      for(let i=0;i<Math.min(_allRowsFull.length,20);i++){
+        const row=_allRowsFull[i];
+        if(!row||!Array.isArray(row)) continue;
+        const cells=row.map(c=>c!=null?String(c).toLowerCase().replace(/[_\-\(\)\/\\]/g,' ').replace(/\s+/g,' ').trim():'');
+        let hits=0;
+        for(const kw of _knownFull){if(cells.some(c=>c===kw||c.includes(kw))) hits++;}
+        if(hits>=3){_hdrIdxFull=i;break;}
+      }
+      const jsonRows=XLSX.utils.sheet_to_json(ws,{defval:null,range:_hdrIdxFull});
+      if(!jsonRows.length){alert('No data rows found.');return;}
+      const headers=Object.keys(jsonRows[0]);
+      const colMap=_normalizeColumns(headers);
+      console.log(`Full import: header row at index ${_hdrIdxFull}`);
+      console.log('Import: mapped columns',colMap);
+
+      P=_computeMetrics(jsonRows,colMap);
+      TS=_computeTeamStats(P);
+      RS=_computeRankingStats(P);
+      FL=_detectAnomalies(P,TS,RS);
+      CM=_generateCommentary(P,TS,RS,FL);
+
+      rebuildFilters();
+      rebuildFlagIndex();
+
+      $('hdrMeta').textContent=new Date().toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'})+' (imported) | Confidential';
+      render();
+      console.log(`Import complete: ${P.length} people, ${FL.length} flags`);
+    }catch(err){
+      alert('Error processing file: '+err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value='';
+});
+
+// --- Light import: Base + Italy Algo (shared handler for v1 and v2) ---
+function _handleLightImport(e,version){
+  ALGO_VERSION=version;
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(evt){
+    try{
+      const data=new Uint8Array(evt.target.result);
+      const wb=XLSX.read(data,{type:'array',cellDates:true});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+
+      // Auto-detect header row: scan first 20 rows for one containing known column names
+      const allRows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+      const _knownHdrs=['id','name','ranking','team','criticality','hire date','hiredate','hired','join date','hr base'];
+      let hdrIdx=0;
+      for(let i=0;i<Math.min(allRows.length,20);i++){
+        const row=allRows[i];
+        if(!row||!Array.isArray(row)) continue;
+        const cells=row.map(c=>c!=null?String(c).toLowerCase().replace(/[_\-\(\)\/\\]/g,' ').replace(/\s+/g,' ').trim():'');
+        let hits=0;
+        for(const kw of _knownHdrs){if(cells.some(c=>c===kw||c.includes(kw))) hits++;}
+        if(hits>=3){hdrIdx=i;break;}
+      }
+      const jsonRows=XLSX.utils.sheet_to_json(ws,{defval:null,range:hdrIdx});
+      if(!jsonRows.length){alert('No data rows found.');return;}
+      const headers=Object.keys(jsonRows[0]);
+      const norm=s=>s.toLowerCase().replace(/[_\-\(\)\/\\]/g,' ').replace(/\s+/g,' ').trim();
+      const lh={};headers.forEach(h=>{lh[norm(h)]=h;});
+      console.log(`Header row detected at index ${hdrIdx}, columns: ${headers.join(', ')}`);
+
+      // Map columns (order-independent)
+      const find=(keys)=>{for(const k of keys){const nk=norm(k);for(const[lk,oh]of Object.entries(lh)){if(lk===nk||lk.includes(nk))return oh;}}return null;};
+      // Required
+      const cId=find(['id']);
+      const cName=find(['name','employee name','full name','surname','first name','last name']);
+      const cTeam=find(['team','product group','productgroup','department','dept']);
+      const cRanking=find(['ranking']);
+      const cCrit=find(['criticality','criticality (1 to 5)','crit']);
+      const cPot=find(['potential','potential (1 to 5)','pot']);
+      const cHireDate=find(['hire date','hiredate','hired','join date','joindate','start date','startdate','date of hire']);
+      const cHrBase=find(['2026 hr base','hr base','2026 base hr']);
+      // Optional
+      const cSugBase=find(['2026 suggested base','suggested base','sug base']);
+      const cBase2025=find(['2025 base','base 2025','current base']);
+      const cBase2024=find(['2024 base','base 2024']);
+      const cBase2023=find(['2023 base','base 2023']);
+      const cBonusHr=find(['2025 hr bonus','hr bonus','bonus hr 2025']);
+      const cBonusSug=find(['2025 suggested bonus','suggested bonus','sug bonus']);
+      const cBonus2024=find(['2024 bonus','bonus 2024']);
+      const cComments=find(['comments','comment','notes','note']);
+
+      // Debug: log matched columns
+      console.log('Column mapping:',{Id:cId,Name:cName,Team:cTeam,Ranking:cRanking,Crit:cCrit,Pot:cPot,HireDate:cHireDate,HrBase:cHrBase,SugBase:cSugBase,Base2025:cBase2025,Base2024:cBase2024,Base2023:cBase2023,BonusHr:cBonusHr,BonusSug:cBonusSug,Bonus2024:cBonus2024,Comments:cComments});
+      console.log('Available headers:',headers);
+      console.log('First row sample:',jsonRows[0]);
+
+      // Validate required columns
+      const missing=[];
+      if(!cId) missing.push('Id');
+      if(!cName) missing.push('Name');
+      if(!cTeam) missing.push('Team');
+      if(!cRanking) missing.push('Ranking');
+      if(!cCrit) missing.push('Criticality');
+      if(!cPot) missing.push('Potential');
+      if(!cHireDate) missing.push('Hire Date');
+      if(!cHrBase) missing.push('2026 HR Base');
+      if(missing.length){
+        $('emptyState').style.display='flex';
+        $('emptyState').innerHTML=`
+          <div style="font-size:48px;margin-bottom:16px;opacity:.4;">&#9888;</div>
+          <div style="font-size:18px;font-weight:600;color:var(--red);margin-bottom:8px;">Import Error — Missing Required Columns</div>
+          <div style="font-size:13px;max-width:600px;margin-bottom:16px;line-height:1.6;color:var(--text2);">
+            The following required columns could not be found:<br>
+            <strong style="color:var(--red);">${missing.join(', ')}</strong>
+          </div>
+          <div style="font-size:12px;max-width:600px;margin-bottom:16px;color:var(--text3);text-align:left;">
+            <strong>Columns found in your file:</strong><br>${headers.join(', ')}
+          </div>
+          <div style="font-size:11px;max-width:600px;color:var(--text3);line-height:1.5;font-style:italic;">Column matching is fuzzy (underscores, hyphens, spaces are normalised). Check spelling and try again.</div>
+          <div style="display:flex;gap:8px;margin-top:16px;">
+            <button class="btn" onclick="$('xlsxInputV1').click()" style="background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600;padding:8px 24px;font-size:13px;">Try Again (v1)</button>
+            <button class="btn" onclick="$('xlsxInputV2').click()" style="background:var(--accent2);color:var(--bg);border-color:var(--accent2);font-weight:600;padding:8px 24px;font-size:13px;">Try Again (v2)</button>
+          </div>`;
+        return;
+      }
+
+      const cfg=_getAlgoCfg();
+      P=jsonRows.map(r=>{
+        const p={};
+        p.id=String(r[cId])||'Unknown';
+        p.name=String(r[cName])||'';
+        p.team=String(r[cTeam])||'Unknown';
+        p.ranking=String(r[cRanking])||'Unknown';
+        p.comments=cComments?String(r[cComments]||''):'';
+        p.criticality=_parseNumber(r[cCrit]);
+        p.potential=_parseNumber(r[cPot]);
+
+        // Hire date & tenure
+        const hdRaw=cHireDate?r[cHireDate]:null;
+        const hd=_parseDate(hdRaw);
+        if(hd){
+          p.hire_date=hd.toISOString().slice(0,10);
+          p.hire_date_raw=String(hdRaw);
+          p.tenure_years=Math.round((Date.now()-hd.getTime())/(365.25*864e5)*10)/10;
+        }else{
+          p.hire_date=null;p.hire_date_raw=hdRaw!=null?String(hdRaw):null;p.tenure_years=null;
+        }
+
+        p.base_2026_hr=_parseNumber(r[cHrBase]);
+        p.base_2026_sug=_parseNumber(cSugBase?r[cSugBase]:null);
+        p.base_2025=_parseNumber(cBase2025?r[cBase2025]:null);
+        p.base_2024=_parseNumber(cBase2024?r[cBase2024]:null);
+        p.base_2023=_parseNumber(cBase2023?r[cBase2023]:null);
+        p.bonus_2025_hr=_parseNumber(cBonusHr?r[cBonusHr]:null);
+        p.bonus_2025_sug=_parseNumber(cBonusSug?r[cBonusSug]:null);
+        p.bonus_2024=_parseNumber(cBonus2024?r[cBonus2024]:null);
+
+        // Compute Italy Base Algo
+        p.italy_algo=_runAlgo(p.ranking,p.base_2026_hr,p.criticality,p.potential,cfg);
+
+        // If no suggested base, use algo as suggestion
+        if(p.base_2026_sug==null&&p.italy_algo!=null) p.base_2026_sug=p.italy_algo;
+        if(p.id&&P.length<3) console.log(`[DEBUG] id=${p.id} sug=${p.base_2026_sug} algo=${p.italy_algo} cSugBase=${cSugBase} rawSug=${cSugBase?r[cSugBase]:null}`);
+
+        // Derived metrics
+        p.base_incr_vs_algo=(p.base_2026_sug!=null&&p.italy_algo!=null)?_r2(p.base_2026_sug-p.italy_algo):null;
+
+        // Base increase (suggested vs 2025)
+        if(p.base_2025!=null&&p.base_2026_sug!=null&&p.base_2025>0){
+          p.base_incr_abs=_r2(p.base_2026_sug-p.base_2025);
+          p.base_incr_pct=_r2((p.base_2026_sug-p.base_2025)/p.base_2025*100);
+        }else{p.base_incr_abs=null;p.base_incr_pct=null;}
+
+        // HR base increase (hr vs 2025)
+        if(p.base_2025!=null&&p.base_2026_hr!=null&&p.base_2025>0){
+          p.base_hr_incr_abs=_r2(p.base_2026_hr-p.base_2025);
+          p.base_hr_incr_pct=_r2((p.base_2026_hr-p.base_2025)/p.base_2025*100);
+        }else{p.base_hr_incr_abs=null;p.base_hr_incr_pct=null;}
+
+        // Base gap (suggested vs HR pool)
+        if(p.base_2026_sug!=null&&p.base_2026_hr!=null){
+          p.base_gap_abs=_r2(p.base_2026_sug-p.base_2026_hr);
+          p.base_gap_pct=p.base_2026_hr>0?_r2((p.base_2026_sug-p.base_2026_hr)/p.base_2026_hr*100):null;
+        }else{p.base_gap_abs=null;p.base_gap_pct=null;}
+
+        // Bonus derived metrics: if HR bonus is 0, treat as no bonus allocated
+        if(p.bonus_2025_hr===0){
+          p.bonus_2025_sug=0;p.bonus_gap_abs=0;p.bonus_gap_pct=0;
+          p.bonus_change_abs=null;p.bonus_change_pct=null;
+          p.bonus_pct_of_base_2025=0;
+        }else{
+          if(p.bonus_2025_sug!=null&&p.bonus_2025_hr!=null){
+            p.bonus_gap_abs=_r2(p.bonus_2025_sug-p.bonus_2025_hr);
+            p.bonus_gap_pct=p.bonus_2025_hr>0?_r2((p.bonus_2025_sug-p.bonus_2025_hr)/p.bonus_2025_hr*100):null;
+          }else{p.bonus_gap_abs=null;p.bonus_gap_pct=null;}
+          if(p.bonus_2025_sug!=null&&p.bonus_2024!=null&&p.bonus_2024>0){
+            p.bonus_change_abs=_r2(p.bonus_2025_sug-p.bonus_2024);
+            p.bonus_change_pct=_r2((p.bonus_2025_sug-p.bonus_2024)/p.bonus_2024*100);
+          }else{p.bonus_change_abs=null;p.bonus_change_pct=null;}
+          if(p.bonus_2025_sug!=null&&p.base_2025!=null&&p.base_2025>0){
+            p.bonus_pct_of_base_2025=_r2(p.bonus_2025_sug/p.base_2025*100);
+          }else{p.bonus_pct_of_base_2025=null;}
+        }
+        p.total_comp_2025=(p.base_2026_sug||0)+(p.bonus_2025_sug||0)||null;
+
+        // Historical increments (24→25, 23→24)
+        if(p.base_2025!=null&&p.base_2024!=null&&p.base_2024>0){
+          p.base_incr_prev_abs=_r2(p.base_2025-p.base_2024);
+          p.base_incr_prev_pct=_r2((p.base_2025-p.base_2024)/p.base_2024*100);
+        }else{p.base_incr_prev_abs=null;p.base_incr_prev_pct=null;}
+        if(p.base_2024!=null&&p.base_2023!=null&&p.base_2023>0){
+          p.base_incr_2324_abs=_r2(p.base_2024-p.base_2023);
+          p.base_incr_2324_pct=_r2((p.base_2024-p.base_2023)/p.base_2023*100);
+        }else{p.base_incr_2324_abs=null;p.base_incr_2324_pct=null;}
+
+        return p;
+      });
+
+      TS=_computeTeamStats(P);
+      RS=_computeRankingStats(P);
+      FL=_detectAnomalies(P,TS,RS);
+      CM=_generateCommentary(P,TS,RS,FL);
+
+      rebuildFilters();
+      rebuildFlagIndex();
+
+      const verLabel=ALGO_VERSION==='v2'?'Algo v2 (aggressive)':'Algo v1 (conservative)';
+      $('hdrMeta').textContent=new Date().toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'})+' (Italy '+verLabel+') | Confidential';
+      render();
+      console.log(`Light import complete: ${P.length} people, Italy Base ${verLabel} applied`);
+    }catch(err){
+      alert('Error processing file: '+err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value='';
+}
+$('xlsxInputV1').addEventListener('change',function(e){ _handleLightImport(e,'v1'); });
+$('xlsxInputV2').addEventListener('change',function(e){ _handleLightImport(e,'v2'); });
+
+render();
+</script>
+</body>
+</html>
