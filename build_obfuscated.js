@@ -33,13 +33,13 @@ while ((match = scriptRegex.exec(html)) !== null) {
     debugProtection: false,
     disableConsoleOutput: false,
     identifierNamesGenerator: 'hexadecimal',
-    renameGlobals: false,        // keep globals accessible (Chart, XLSX, docx, etc.)
-    selfDefending: false,        // avoid issues in different environments
+    renameGlobals: false,
+    selfDefending: false,
     stringArray: true,
     stringArrayEncoding: ['base64'],
     stringArrayThreshold: 0.75,
     transformObjectKeys: true,
-    unicodeEscapeSequence: false,
+    unicodeEscapeSequence: true,
     target: 'browser',
   });
 
