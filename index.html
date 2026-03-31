@@ -802,6 +802,35 @@ async function fetchAllStockPrices(tickers) {
       });
     }
   }
+  console.log('[Stocks] Got prices for:', [...result.keys()].join(', '));
+  const missing = tickers.filter(t => !result.has(t));
+  if (missing.length > 0) console.warn('[Stocks] Missing from batch:', missing.join(', '));
+
+  // Fetch missing tickers individually
+  for (const ticker of missing) {
+    try {
+      console.log(`[Stocks] Fetching ${ticker} individually...`);
+      await delay(1000);
+      const singleUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?range=1mo&interval=1d`;
+      const singleRaw = await proxyFetch(singleUrl);
+      const singleData = JSON.parse(singleRaw);
+      if (singleData.chart && singleData.chart.result) {
+        const sr = singleData.chart.result[0];
+        const sm = sr.meta;
+        const sq = (sr.indicators && sr.indicators.quote && sr.indicators.quote[0]) || {};
+        const sc = (sq.close || []).filter(v => v != null);
+        result.set(ticker, {
+          price: sm.regularMarketPrice,
+          previousClose: sm.chartPreviousClose || sm.previousClose || (sc.length > 1 ? sc[sc.length - 2] : sm.regularMarketPrice),
+          closes: sc
+        });
+        console.log(`[Stocks] ${ticker} loaded individually: ${sm.regularMarketPrice}`);
+      }
+    } catch (e) {
+      console.warn(`[Stocks] ${ticker} individual fetch failed:`, e.message);
+    }
+  }
+
   return result;
 }
 
