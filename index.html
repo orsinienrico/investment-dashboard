@@ -241,7 +241,8 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Performance bar chart */
+/* Desktop/Mobile visibility */
+.mobile-only { display: none; }
 
 /* Holdings Table */
 .holdings-section {
@@ -438,6 +439,73 @@ td.right { text-align: right; }
   100% { background-position: -200% 0; }
 }
 
+/* Mobile Holdings Cards */
+.holdings-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.h-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.h-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.h-card-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.h-card-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.h-card-issuer {
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.h-card-value {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.h-card-metrics {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.h-card-metrics span {
+  white-space: nowrap;
+}
+
 /* Responsive — Tablet */
 @media (max-width: 700px) {
   .charts-grid { grid-template-columns: 1fr; }
@@ -497,24 +565,9 @@ td.right { text-align: right; }
   .maturity-amount { width: 60px; }
   .maturity-rate { width: 32px; font-size: 0.5rem; }
 
-  /* Table */
-  td { padding: 5px 6px; font-size: 0.68rem; }
-  thead th { padding: 6px 6px; font-size: 0.58rem; }
-  td.name-cell { max-width: 90px; }
-  .sparkline-svg { width: 40px; height: 18px; }
-  .weight-bar { width: 30px; }
-
-  /* Scroll hint for table */
-  .holdings-table-wrapper { position: relative; }
-  .holdings-table-wrapper::after {
-    content: '';
-    position: absolute;
-    top: 0; bottom: 0; right: 0;
-    width: 20px;
-    background: linear-gradient(to right, transparent, var(--bg-card));
-    pointer-events: none;
-    border-radius: 0 10px 10px 0;
-  }
+  /* Hide table, show cards on mobile */
+  .desktop-only { display: none; }
+  .mobile-only { display: block; }
 
   /* Portfolio desc */
   .portfolio-desc { padding: 12px; }
@@ -741,10 +794,10 @@ td.right { text-align: right; }
     <!-- Charts -->
     <div class="charts-grid" id="chartsGrid"></div>
 
-    <!-- Holdings Table -->
+    <!-- Holdings Table (desktop) -->
     <div class="holdings-section">
       <h2>Posizioni</h2>
-      <div class="holdings-table-wrapper">
+      <div class="holdings-table-wrapper desktop-only">
         <table>
           <thead>
             <tr>
@@ -766,6 +819,8 @@ td.right { text-align: right; }
           <tbody id="holdingsBody"></tbody>
         </table>
       </div>
+      <!-- Holdings Cards (mobile) -->
+      <div class="holdings-cards mobile-only" id="holdingsCards"></div>
     </div>
 
     <!-- Portfolio Description -->
@@ -1622,6 +1677,7 @@ function handleSort(col) {
 // Holdings table
 function renderHoldings(holdings, totalValue) {
   const tbody = document.getElementById('holdingsBody');
+  const cardsEl = document.getElementById('holdingsCards');
   const sorted = [...holdings].sort((a, b) => {
     try {
       const va = getSortValue(a, sortColumn);
@@ -1677,6 +1733,39 @@ function renderHoldings(holdings, totalValue) {
       </tr>
     `;
   }).join('');
+
+  // Mobile cards
+  if (cardsEl) {
+    cardsEl.innerHTML = sorted.map(h => {
+      const pending = !h.loaded && (h.ticker || h.teleborsa);
+      const est = h.estimated;
+      const star = est ? '*' : '';
+      const mv = h.marketValue || 0;
+      const weight = totalValue > 0 ? (mv / totalValue * 100).toFixed(1) : '0.0';
+      const typeLabel = TYPE_LABELS[h.type] || h.type;
+      const plStr = h.gainLoss != null ? `<span class="${gainClass(h.gainLoss)}">${h.gainLoss >= 0 ? '+' : ''}${fmtCurrency(h.gainLoss)}${star}</span>` : '';
+      const plPctStr = h.gainLossPct != null ? `<span class="${gainClass(h.gainLossPct)}">${fmtPct(h.gainLossPct)}</span>` : '';
+      const dayStr = h.dayChangePct != null ? `<span class="${gainClass(h.dayChangePct)}">Oggi ${fmtPct(h.dayChangePct)}</span>` : '';
+      const valueStr = pending ? '<span class="cell-loading">...</span>' : (mv > 0 ? fmtCurrency(mv) + star : '—');
+
+      return `<div class="h-card fade-in">
+        <div class="h-card-top">
+          <div class="h-card-left">
+            <span class="type-tag type-${h.type}" style="font-size:0.5rem;padding:1px 4px;">${typeLabel}</span>
+            <span class="h-card-name" title="${h.name}">${h.ticker || h.name}</span>
+            <span class="h-card-issuer">${h.issuer || ''}</span>
+          </div>
+          <span class="h-card-value">${valueStr}</span>
+        </div>
+        <div class="h-card-metrics">
+          ${plStr ? `<span>P/L ${plStr} ${plPctStr}</span>` : ''}
+          ${dayStr}
+          <span>Peso ${weight}%</span>
+          <span>Inv. ${h.totalCost != null ? fmtCurrency(h.totalCost) : '—'}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
 }
 
 // Refresh
