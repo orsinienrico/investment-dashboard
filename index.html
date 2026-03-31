@@ -397,19 +397,14 @@ td.right { text-align: right; }
   transition: width 0.3s;
 }
 
-/* Status messages */
-.status-bar {
-  text-align: center;
-  padding: 10px;
-  color: var(--text-secondary);
-  font-size: 0.75rem;
+/* Inline status in header */
+.header-status {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
-
-.status-bar.error {
+.header-status.error {
   color: var(--red);
-  background: var(--red-dim);
-  border-radius: 8px;
-  border: 1px solid var(--red);
 }
 
 .error-badge {
@@ -643,13 +638,13 @@ td.right { text-align: right; }
   <div class="header">
     <h1><span class="icon">&#9670;</span> Portafoglio Investimenti</h1>
     <div class="header-right">
-      <span class="last-updated" id="lastUpdated">Not yet loaded</span>
+      <span id="statusBar" class="header-status">Caricamento...</span>
+      <span class="last-updated" id="lastUpdated"></span>
       <button class="btn" id="refreshBtn" onclick="refreshAll()">Refresh</button>
     </div>
   </div>
 
   <noscript><div style="color:#b85c5c;padding:20px;text-align:center;">JavaScript è disabilitato o non supportato. Apri questa pagina da un web server (es. GitHub Pages).</div></noscript>
-  <div id="statusBar" class="status-bar">Loading portfolio data...</div>
 
   <div id="mainContent" style="display:none;">
     <!-- Executive Summary -->
@@ -1044,9 +1039,9 @@ async function loadPortfolio() {
   const status = document.getElementById('statusBar');
   btn.classList.add('loading');
   btn.disabled = true;
-  status.textContent = 'Loading portfolio...';
-  status.className = 'status-bar';
-  status.style.display = 'block';
+  status.textContent = 'Caricamento...';
+  status.className = 'header-status';
+  status.style.display = '';
 
   // Initialize all holdings
   portfolioData = PORTFOLIO.map(h => {
@@ -1063,7 +1058,7 @@ async function loadPortfolio() {
   // ── STEP 1: Fetch ALL stock prices in ONE proxy call ──
   const stockTickers = PORTFOLIO.filter(h => h.ticker).map(h => h.ticker);
   if (stockTickers.length > 0) {
-    status.textContent = `Fetching stock prices...`;
+    status.textContent = 'Prezzi azioni...';
     try {
       const stockPrices = await fetchAllStockPrices(stockTickers);
       PORTFOLIO.forEach((h, i) => {
@@ -1106,7 +1101,7 @@ async function loadPortfolio() {
 
   for (const slug of uniqueSlugs) {
     slugIdx++;
-    status.textContent = `Fetching fund NAV... (${slugIdx}/${uniqueSlugs.length})`;
+    status.textContent = `NAV fondi... (${slugIdx}/${uniqueSlugs.length})`;
 
     // Wait between proxy calls to avoid rate limiting
     if (slugIdx > 1) await delay(3000);
@@ -1156,11 +1151,11 @@ async function loadPortfolio() {
   btn.classList.remove('loading');
   btn.disabled = false;
 
-  // Hide status bar after loading — hero shows all summary info
+  // Hide status after loading — hero shows all summary info
   if (errors.length > 0) {
     const errorTooltip = errors.map(e => `${e.name}: ${e.reason}`).join('\n');
-    status.innerHTML = `<span class="error-badge" title="${errorTooltip}">${errors.length} errori di caricamento &#9432;</span>`;
-    status.className = 'status-bar error';
+    status.innerHTML = `<span class="error-badge" title="${errorTooltip}">${errors.length} errori &#9432;</span>`;
+    status.className = 'header-status error';
   } else {
     status.style.display = 'none';
   }
