@@ -785,7 +785,7 @@ async function fetchAllStockPrices(tickers) {
 
   result.set(primary, {
     price: meta.regularMarketPrice,
-    previousClose: meta.chartPreviousClose || meta.previousClose || (closes.length > 1 ? closes[closes.length - 2] : meta.regularMarketPrice),
+    previousClose: meta.previousClose || (closes.length > 1 ? closes[closes.length - 2] : meta.regularMarketPrice),
     closes: closes
   });
 
@@ -821,7 +821,7 @@ async function fetchAllStockPrices(tickers) {
         const sc = (sq.close || []).filter(v => v != null);
         result.set(ticker, {
           price: sm.regularMarketPrice,
-          previousClose: sm.chartPreviousClose || sm.previousClose || (sc.length > 1 ? sc[sc.length - 2] : sm.regularMarketPrice),
+          previousClose: sm.previousClose || (sc.length > 1 ? sc[sc.length - 2] : sm.regularMarketPrice),
           closes: sc
         });
         console.log(`[Stocks] ${ticker} loaded individually: ${sm.regularMarketPrice}`);
