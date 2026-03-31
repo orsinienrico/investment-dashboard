@@ -193,7 +193,7 @@ body {
 /* Charts Section */
 .charts-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -507,7 +507,11 @@ td.right { text-align: right; }
 }
 
 /* Responsive */
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
+  .charts-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 700px) {
   .charts-grid { grid-template-columns: 1fr; }
 }
 
@@ -1113,6 +1117,25 @@ function renderCharts(holdings, totalValue) {
     .filter(h => h.gainLossPct != null)
     .sort((a, b) => b.gainLossPct - a.gainLossPct);
 
+  // Performance by issuer (aggregate cost & value per issuer, then compute P/L %)
+  const issuerMap = {};
+  holdings.forEach(h => {
+    const iss = h.issuer || 'Altro';
+    if (!issuerMap[iss]) issuerMap[iss] = { cost: 0, value: 0 };
+    issuerMap[iss].cost += (h.totalCost || 0);
+    issuerMap[iss].value += (h.marketValue || 0);
+  });
+  const issuerPerf = Object.entries(issuerMap)
+    .filter(([, d]) => d.cost > 0 && d.value > 0)
+    .map(([name, d]) => ({
+      name,
+      ticker: null,
+      gainLossPct: ((d.value - d.cost) / d.cost) * 100,
+      gainLoss: d.value - d.cost,
+      issuerLabel: name
+    }))
+    .sort((a, b) => b.gainLossPct - a.gainLossPct);
+
   grid.innerHTML = `
     <div class="chart-card fade-in">
       <h3>Allocazione per Tipo</h3>
@@ -1121,9 +1144,15 @@ function renderCharts(holdings, totalValue) {
       </div>
     </div>
     <div class="chart-card fade-in">
-      <h3>Performance (Rendimento %)</h3>
+      <h3>Performance per Strumento</h3>
       <div class="chart-container">
-        ${perfData.length > 0 ? renderPerfBars(perfData) : '<div style="color:var(--text-muted);text-align:center;padding:20px;">Nessun dato P/L disponibile</div>'}
+        ${perfData.length > 0 ? renderPerfBars(perfData) : '<div style="color:var(--text-muted);text-align:center;padding:10px;">Nessun dato P/L</div>'}
+      </div>
+    </div>
+    <div class="chart-card fade-in">
+      <h3>Performance per Emittente</h3>
+      <div class="chart-container">
+        ${issuerPerf.length > 0 ? renderPerfBars(issuerPerf.map(d => ({ ...d, ticker: d.issuerLabel }))) : '<div style="color:var(--text-muted);text-align:center;padding:10px;">Nessun dato P/L</div>'}
       </div>
     </div>
   `;
