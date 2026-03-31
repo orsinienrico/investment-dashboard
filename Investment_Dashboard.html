@@ -1156,19 +1156,13 @@ async function loadPortfolio() {
   btn.classList.remove('loading');
   btn.disabled = false;
 
-  const staticCount = PORTFOLIO.filter(h => !h.ticker && !h.teleborsa).length;
-  const errorTooltip = errors.length > 0
-    ? errors.map(e => `${e.name}: ${e.reason}`).join('\n')
-    : '';
-  if (liveCount === 0 && errors.length > 0) {
-    status.innerHTML = `Quotazioni non disponibili. ${staticCount} posizioni a costo. <span class="error-badge" title="${errorTooltip}">${errors.length} errori &#9432;</span>`;
+  // Hide status bar after loading — hero shows all summary info
+  if (errors.length > 0) {
+    const errorTooltip = errors.map(e => `${e.name}: ${e.reason}`).join('\n');
+    status.innerHTML = `<span class="error-badge" title="${errorTooltip}">${errors.length} errori di caricamento &#9432;</span>`;
     status.className = 'status-bar error';
-  } else if (errors.length > 0) {
-    status.innerHTML = `${liveCount} quotazioni live. ${staticCount} a costo. <span class="error-badge" title="${errorTooltip}">${errors.length} errori &#9432;</span>`;
-    status.className = 'status-bar';
   } else {
-    status.innerHTML = `${liveCount} quotazioni live. ${staticCount} posizioni a costo/nominale.`;
-    status.className = 'status-bar';
+    status.style.display = 'none';
   }
 
   document.getElementById('lastUpdated').textContent =
