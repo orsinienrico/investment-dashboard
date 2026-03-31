@@ -431,7 +431,10 @@ td.flags-cell { white-space:normal; max-width:200px; line-height:1.4; }
 
   <!-- TAB: Italy Base Algo -->
   <div class="tab-content" id="tab-algoDoc" style="display:none;">
-    <div style="margin-bottom:8px;"><button class="btn" onclick="switchTab('dashboard',document.querySelector('.tab-btn'))" style="font-size:11px;padding:4px 12px;">&larr; Back to Dashboard</button></div>
+    <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center;">
+      <button class="btn" onclick="switchTab('dashboard',document.querySelector('.tab-btn'))" style="font-size:11px;padding:4px 12px;">&larr; Back to Dashboard</button>
+      <button class="btn" onclick="downloadItalyAlgoWord()" style="background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600;font-size:11px;padding:4px 14px;">&#128196; Download Word</button>
+    </div>
     <div class="card" style="padding:24px 32px;max-width:1100px;line-height:1.7;font-size:13px;">
 
       <h2 style="color:var(--accent);margin:0 0 6px 0;font-size:20px;">2026 Salary Review — Executive Summary</h2>
@@ -4286,6 +4289,258 @@ function downloadIndiaEmail(){
     sections:[{properties:{page:{margin:{top:720,bottom:720,left:900,right:900},size:{orientation:'landscape'}}},children}]
   });
   Packer.toBlob(doc).then(blob=>saveAs(blob,`India_2026_Salary_Review_Email_${new Date().toISOString().slice(0,10)}.docx`));
+}
+
+// --- Download Italy Algo Documentation as Word ---
+function downloadItalyAlgoWord(){
+  const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,BorderStyle,AlignmentType,ShadingType,VerticalAlign}=docx;
+  const FONT='Calibri Light',FONT_B='Calibri';
+  const SZ=22,SZ_SM=20,SZ_H1=28,SZ_H2=24,SZ_XS=18;
+  const BLK='222222',GREEN='2E7D32',RED='C62828',GRAY='666666',LTGRAY='999999';
+  const ACCENT='4472C4',ACCENT2='548235',ORANGE='B8860B',PURPLE='7B5EA7';
+  const HDR_BG='E8E8E8',ALT_BG='F5F5F5',BORDER_CLR='C0C0C0';
+  const EUR='\u20AC';
+
+  const thinBorder={style:BorderStyle.SINGLE,size:1,color:BORDER_CLR};
+  const thinBorders={top:thinBorder,bottom:thinBorder,left:thinBorder,right:thinBorder};
+  const noBorder={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const noBorders={top:noBorder,bottom:noBorder,left:noBorder,right:noBorder};
+
+  const spacer=(s)=>new Paragraph({spacing:{after:s||80},children:[]});
+  const txt=(t,o)=>new TextRun({text:t,font:o&&o.font||FONT,size:o&&o.size||SZ,bold:!!(o&&o.bold),italics:!!(o&&o.italics),color:o&&o.color||BLK});
+  const para=(runs,o)=>new Paragraph({spacing:{before:o&&o.before||0,after:o&&o.after||40},indent:{left:o&&o.left||120,right:o&&o.right||120},alignment:o&&o.align||AlignmentType.LEFT,children:runs});
+  const heading=(t,sz,color)=>new Paragraph({spacing:{before:200,after:80},indent:{left:120},children:[new TextRun({text:t,bold:true,size:sz||SZ_H2,font:FONT_B,color:color||BLK})]});
+  const bullet=(t,o)=>new Paragraph({spacing:{after:30},indent:{left:360,hanging:240},children:[new TextRun({text:'\u2022  '+t,size:o&&o.size||SZ,font:FONT,color:o&&o.color||BLK,bold:!!(o&&o.bold)})]});
+  const numberedItem=(n,t,o)=>new Paragraph({spacing:{after:40},indent:{left:360,hanging:240},children:[new TextRun({text:n+'. ',bold:true,size:SZ,font:FONT,color:BLK}),new TextRun({text:t,size:SZ,font:FONT,color:BLK})]});
+
+  const hCell=(t,w,bg)=>new TableCell({borders:thinBorders,width:{size:w||1500,type:WidthType.DXA},
+    shading:{type:ShadingType.SOLID,color:bg||HDR_BG},verticalAlign:VerticalAlign.CENTER,
+    children:[new Paragraph({spacing:{before:30,after:30},alignment:AlignmentType.CENTER,
+      children:[new TextRun({text:t,bold:true,size:SZ_SM,font:FONT_B,color:BLK})]})]});
+  const lC=(t,w,bg)=>new TableCell({borders:thinBorders,width:{size:w||2000,type:WidthType.DXA},
+    ...(bg?{shading:{type:ShadingType.SOLID,color:bg}}:{}),verticalAlign:VerticalAlign.CENTER,
+    children:[new Paragraph({spacing:{before:25,after:25},indent:{left:60},
+      children:[new TextRun({text:String(t),size:SZ_SM,font:FONT,color:BLK})]})]});
+  const vC=(t,w,color,bg)=>new TableCell({borders:thinBorders,width:{size:w||1500,type:WidthType.DXA},
+    ...(bg?{shading:{type:ShadingType.SOLID,color:bg}}:{}),verticalAlign:VerticalAlign.CENTER,
+    children:[new Paragraph({spacing:{before:25,after:25},alignment:AlignmentType.CENTER,
+      children:[new TextRun({text:String(t),size:SZ_SM,font:FONT,bold:true,color:color||BLK})]})]});
+  const lCBold=(t,w,color,bg)=>new TableCell({borders:thinBorders,width:{size:w||2000,type:WidthType.DXA},
+    ...(bg?{shading:{type:ShadingType.SOLID,color:bg}}:{}),verticalAlign:VerticalAlign.CENTER,
+    children:[new Paragraph({spacing:{before:25,after:25},indent:{left:60},
+      children:[new TextRun({text:String(t),size:SZ_SM,font:FONT_B,bold:true,color:color||BLK})]})]});
+
+  const callout=(text,borderColor)=>new Paragraph({spacing:{before:60,after:60},indent:{left:240,right:120},
+    border:{left:{style:BorderStyle.SINGLE,size:12,color:borderColor||ACCENT,space:8}},
+    children:[new TextRun({text:text,size:SZ_SM,font:FONT,color:BLK})]});
+  const calloutBold=(label,text,borderColor)=>new Paragraph({spacing:{before:60,after:60},indent:{left:240,right:120},
+    border:{left:{style:BorderStyle.SINGLE,size:12,color:borderColor||ACCENT,space:8}},
+    children:[new TextRun({text:label,bold:true,size:SZ_SM,font:FONT_B,color:borderColor||ACCENT}),new TextRun({text:' '+text,size:SZ_SM,font:FONT,color:BLK})]});
+
+  const children=[];
+
+  // ==================== HEADER ====================
+  children.push(new Table({rows:[new TableRow({children:[
+    new TableCell({borders:noBorders,width:{size:10000,type:WidthType.DXA},children:[
+      new Paragraph({spacing:{before:80,after:20},children:[
+        new TextRun({text:'2026 Italy Salary Review \u2014 Algorithm Documentation',bold:true,size:32,font:FONT_B,color:ACCENT})]}),
+      new Paragraph({spacing:{after:20},children:[
+        new TextRun({text:'Selective merit increase under zero-budget mandate  |  Calibrated against Italy IT market 2026',size:SZ_SM,font:FONT,color:GRAY})]}),
+      new Paragraph({spacing:{after:20},children:[
+        new TextRun({text:'To: ',bold:true,size:SZ_SM,font:FONT,color:GRAY}),
+        new TextRun({text:'COO / Head of HR',size:SZ_SM,font:FONT,color:BLK})]}),
+      new Paragraph({spacing:{after:20},children:[
+        new TextRun({text:'Date: ',bold:true,size:SZ_SM,font:FONT,color:GRAY}),
+        new TextRun({text:new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}),size:SZ_SM,font:FONT,color:BLK})]}),
+      new Paragraph({spacing:{after:40},children:[
+        new TextRun({text:'Classification: ',bold:true,size:SZ_SM,font:FONT,color:GRAY}),
+        new TextRun({text:'CONFIDENTIAL \u2014 Internal use only',size:SZ_SM,font:FONT,color:RED})]})
+    ]})
+  ]})]}));
+  children.push(new Paragraph({spacing:{after:40},border:{top:{style:BorderStyle.SINGLE,size:3,color:ACCENT}},children:[]}));
+  children.push(spacer(40));
+
+  // ==================== EXECUTIVE SUMMARY ====================
+  children.push(heading('Executive Summary',SZ_H1));
+  children.push(para([
+    txt('This document presents the design, logic, and market justification for the 2026 Italy salary review algorithm. The model was developed under an HR mandate of '),
+    txt('zero base salary increase',{bold:true}),
+    txt(' and provides a systematic, formula-driven framework that selectively concentrates merit increases on the highest-value profiles while remaining within the zero-budget envelope.'),
+  ]));
+  children.push(para([
+    txt('The algorithm differentiates employees across five performance tiers (TOP 10%, TOP 30%, MIDDLE, BOTTOM 30%, BOTTOM 10%) and applies salary-banded rates that are inversely proportional to current compensation \u2014 delivering the largest corrections to junior and underpaid top performers, where the retention risk and market gap are greatest.'),
+  ]));
+  children.push(para([
+    txt('All rates are calibrated against published third-party benchmarks for the Italian IT sector: '),
+    txt('Hays Salary Guide 2026',{bold:true}),txt(' (~1,300 Italian tech professionals), '),
+    txt('ECA Salary Trends Europe 2025\u201326',{bold:true}),txt(', and '),
+    txt('Ravio Compensation Trends 2026',{bold:true}),
+    txt('. The Italy IT sector average salary growth for 2026 is projected at 5\u20137%, with same-employer increases at 2\u20135% and CPI inflation at ~2%.'),
+  ]));
+  children.push(para([
+    txt('TOP 10% employees receive +3% to +12% (intentionally above market to correct accumulated gaps). TOP 30% receive +2% to +6% (within market range). MIDDLE employees receive 0% to +4% based on a composite score (Criticality \u00D7 0.6 + Potential \u00D7 0.4), with salary-based bias floors that protect against under-rating. BOTTOM 30% and BOTTOM 10% receive 0% with no exceptions \u2014 a deliberate performance signal.'),
+  ]));
+  children.push(para([
+    txt('All proposed base salaries are rounded '),txt('UP to the nearest '+EUR+'500',{bold:true}),
+    txt(' (CEILING). Bottom-ranked employees retain their exact current salary \u2014 no rounding is applied.'),
+  ]));
+  children.push(para([
+    txt('The only identified gap versus market expectation is for low-score MIDDLE employees above '+EUR+'55,000, who receive 0% versus a market expectation of 2\u20133%. This is a deliberate allocation decision under the zero-budget constraint.'),
+  ]));
+  children.push(para([
+    txt('The algorithm applies '),txt('identical rules',{bold:true}),
+    txt(' to every employee within the same ranking and salary band, with no discretionary individual adjustments. This structure is fully compliant with the '),
+    txt('EU Pay Transparency Directive',{bold:true}),
+    txt(' (effective 7 June 2026), which requires a documented, objective justification for pay dispersion between tiers.'),
+  ]));
+  children.push(para([
+    txt('Sections 1\u20135 below provide the complete rate tables, scoring logic, and market comparison. Section 6 documents known limitations and recommendations for future cycles.'),
+  ]));
+  children.push(spacer(40));
+
+  // ==================== GUIDING PRINCIPLES ====================
+  children.push(heading('Guiding Principles',SZ_H2));
+  children.push(bullet('Reward performance rank \u2014 the primary driver of differentiation, determined through the established annual review process.',{bold:false}));
+  children.push(bullet('Correct accumulated market gaps \u2014 particularly at lower salary levels where underpayment relative to the Italy IT market is most acute (Hays Salary Guide 2026).',{bold:false}));
+  children.push(bullet('Protect retention \u2014 through targeted increases for high-criticality and high-potential profiles, informed by objective scoring (Criticality \u00D7 0.6 + Potential \u00D7 0.4).',{bold:false}));
+  children.push(bullet('Full compliance with the EU Pay Transparency Directive (effective 7 June 2026) \u2014 this documented algorithm constitutes the required written justification for pay dispersion between tiers.',{bold:false}));
+  children.push(spacer(40));
+
+  // ==================== MARKET CALIBRATION ====================
+  children.push(heading('Market Calibration',SZ_H2));
+  children.push(callout('Sources: Hays Salary Guide 2026 (February 2026, ~1,300 Italian tech professionals) \u00B7 ECA Salary Trends Europe 2025\u201326 \u00B7 Ravio Compensation Trends 2026.',ACCENT));
+  children.push(para([
+    txt('Key market data for Italy IT sector 2026: average tech RAL '),txt(EUR+'50,730',{bold:true}),
+    txt(' (below the white-collar average of '+EUR+'56,360). Same-employer salary increases: 2\u20135%. Job-change premium: 15\u201320%. Tech sector average growth: '),
+    txt('5\u20137%',{bold:true}),txt('. Italy CPI inflation 2026: ~2%. Estimated real salary growth: ~2\u20133%.'),
+  ]));
+  children.push(para([
+    txt('The algorithm is calibrated against these published benchmarks. TOP 10% performers receive '),txt('intentionally above-market',{bold:true}),
+    txt(' increases to correct accumulated gaps and provide a strong retention signal. TOP 30% and MIDDLE tiers are positioned within the published market range. The only identified gap versus market expectations is for low-score MIDDLE employees with salaries above '+EUR+'55,000, who receive 0% under the algorithm versus a 2\u20133% market expectation. This is a deliberate design choice: the zero-budget mandate requires concentration of resources on the highest-value profiles.'),
+  ]));
+  children.push(spacer(40));
+
+  // ==================== 1. RANKING OVERVIEW ====================
+  children.push(heading('1. Ranking Overview',SZ_H1));
+  children.push(para([txt('The algorithm assigns a differentiated increase rate based on the employee\'s performance ranking, as determined through the annual review process. Five tiers are used, each with a distinct compensation signal.')]));
+  children.push(spacer(20));
+  const rkRows=[
+    new TableRow({children:[hCell('Ranking',2000),hCell('Profile',1600),hCell('Range',1400),hCell('Logic',3200),hCell('Signal',1800)]}),
+    new TableRow({children:[lCBold('TOP 10%',2000,ACCENT),lC('Best performers',1600),vC('+3% \u2192 +12%',1400,ACCENT),lC('Salary-banded \u2014 lower salary = higher %',3200),vC('Strong reward',1800,ACCENT2)]}),
+    new TableRow({children:[lCBold('TOP 30%',2000,ACCENT2,ALT_BG),lC('Strong performers',1600,ALT_BG),vC('+2% \u2192 +6%',1400,ACCENT2,ALT_BG),lC('Same bands, half rate',3200,ALT_BG),vC('Recognition',1800,ACCENT2,ALT_BG)]}),
+    new TableRow({children:[lCBold('MIDDLE',2000,GRAY),lC('Core team',1600),vC('0% \u2192 +4%',1400,BLK),lC('Criticality + Potential score \u00D7 salary band + floor',3200),vC('Selective',1800,ACCENT2)]}),
+    new TableRow({children:[lCBold('BOTTOM 30%',2000,RED,ALT_BG),lC('Below expectation',1600,ALT_BG),vC('0%',1400,RED,ALT_BG),lC('Zero \u2014 exact salary preserved, no rounding',3200,ALT_BG),vC('Performance signal',1800,RED,ALT_BG)]}),
+    new TableRow({children:[lCBold('BOTTOM 10%',2000,RED),lC('Lowest performers',1600),vC('0%',1400,RED),lC('Zero \u2014 exact salary preserved, no rounding',3200),vC('Performance signal',1800,RED)]})
+  ];
+  children.push(new Table({rows:rkRows}));
+  children.push(spacer(60));
+
+  // ==================== 2. TOP 10% DETAIL ====================
+  children.push(heading('2. TOP 10% \u2014 Salary Band Detail',SZ_H1,ACCENT));
+  children.push(para([txt('Rates are inversely proportional to salary: junior/underpaid employees receive the highest percentage correction, tapering towards a recognition-level increase for senior profiles. This structure is consistent with published market practice for top-performer retention (Hays, ECA).')]));
+  children.push(spacer(20));
+  const t10Data=[
+    ['\u2264 '+EUR+'34,000','MAX('+EUR+'35k, algo)','Entry-level floor \u2014 algorithm still applied, whichever is higher'],
+    ['< '+EUR+'36,000','+12%','Maximum correction \u2014 junior / underpaid'],
+    [EUR+'36k \u2013 '+EUR+'45k','+11%','Strong correction'],
+    [EUR+'45k \u2013 '+EUR+'55k','+10%','Meaningful increase'],
+    [EUR+'55k \u2013 '+EUR+'60k','+9%','Transition band \u2014 reduces cliff edge at '+EUR+'55k threshold'],
+    [EUR+'60k \u2013 '+EUR+'70k','+7%','Senior recognition'],
+    ['> '+EUR+'70,000','+3%','Symbolic signal \u2014 senior / high salary']
+  ];
+  const t10Rows=[new TableRow({children:[hCell('Salary Band',3200),hCell('Rate',1800),hCell('Notes',5000)]})];
+  t10Data.forEach((r,i)=>{const bg=i%2===1?ALT_BG:null;t10Rows.push(new TableRow({children:[lC(r[0],3200,bg),vC(r[1],1800,ACCENT,bg),lC(r[2],5000,bg)]}));});
+  children.push(new Table({rows:t10Rows}));
+  children.push(spacer(60));
+
+  // ==================== 3. TOP 30% DETAIL ====================
+  children.push(heading('3. TOP 30% \u2014 Salary Band Detail',SZ_H1,ACCENT2));
+  children.push(para([txt('TOP 30% employees receive approximately half the TOP 10% rate at each band, providing meaningful recognition while preserving clear differentiation from top performers.')]));
+  children.push(spacer(20));
+  const t30Data=[
+    ['\u2264 '+EUR+'36,000','MAX('+EUR+'36k, algo)','Minimum floor \u2014 higher than MIDDLE minimum'],
+    ['< '+EUR+'36,000','+6%','Market correction'],
+    [EUR+'36k \u2013 '+EUR+'55k','+5%','Recognition'],
+    [EUR+'55k \u2013 '+EUR+'70k','+3%','Modest signal'],
+    ['> '+EUR+'70,000','+2%','Symbolic']
+  ];
+  const t30Rows=[new TableRow({children:[hCell('Salary Band',3200),hCell('Rate',1800),hCell('Notes',5000)]})];
+  t30Data.forEach((r,i)=>{const bg=i%2===1?ALT_BG:null;t30Rows.push(new TableRow({children:[lC(r[0],3200,bg),vC(r[1],1800,ACCENT2,bg),lC(r[2],5000,bg)]}));});
+  children.push(new Table({rows:t30Rows}));
+  children.push(spacer(60));
+
+  // ==================== 4. MIDDLE DETAIL ====================
+  children.push(heading('4. MIDDLE \u2014 Score-Based Logic',SZ_H1,PURPLE));
+  children.push(calloutBold('Score Formula:','Score = (Criticality \u00D7 0.6) + (Potential \u00D7 0.4)  |  Maximum = 6.0. Criticality is weighted at 60% because retention risk is immediate and measurable. Potential is weighted at 40%, representing future investment value.',PURPLE));
+  children.push(spacer(20));
+  children.push(calloutBold('Salary-based bias floors:','Employees below '+EUR+'40,000 receive a minimum +2.5% increase regardless of score. Employees between '+EUR+'40,000\u2013'+EUR+'55,000 receive a minimum +1.5%. These floors are designed to protect against manager under-rating bias and ensure that underpaid MIDDLE employees receive at least an inflation-level adjustment.',ORANGE));
+  children.push(spacer(20));
+  children.push(para([txt('The following table shows the increase logic in priority order. Each employee is matched to the first applicable condition.')]));
+  children.push(spacer(20));
+  const midData=[
+    ['Salary > '+EUR+'65k AND Criticality < 5','0%','Middle at senior pay without maximum criticality \u2014 no case for increase under zero-budget mandate'],
+    ['Criticality = 5 (any salary)','\u2264'+EUR+'65k: +2% | >'+EUR+'65k: +1%','Retention emergency \u2014 always receives an increase regardless of salary level'],
+    ['Salary \u2264 '+EUR+'34,000',EUR+'35,000 flat','Cannot leave MIDDLE employee at entry-level pay \u2014 floor guarantee'],
+    ['Score \u2265 5.0','<'+EUR+'36k: +4% | \u2264'+EUR+'55k: +3% | else: +2%','High-value profile \u2014 corrects accumulated market gap'],
+    ['Score \u2265 3.5','Crit\u22654: +1% | <'+EUR+'36k: +3% | \u2264'+EUR+'55k: +2% | else: +1%','Moderate signal \u2014 selective reward within budget constraint'],
+    ['Score < 3.5','Crit\u22654: +1% | else: 0%','Criticality-only floor \u2014 protects critical profiles with low potential scores'],
+    ['FLOOR: salary < '+EUR+'40k (any score)','Minimum +2.5% guaranteed','Anti-bias \u2014 ensures underpaid employees receive at least inflation-level adjustment'],
+    ['FLOOR: salary '+EUR+'40k\u2013'+EUR+'55k','Minimum +1.5% guaranteed','Anti-bias \u2014 partial market correction for mid-range salaries']
+  ];
+  const midRows=[new TableRow({children:[hCell('Condition (priority order)',3600),hCell('Increase',2200),hCell('Rationale',4200)]})];
+  midData.forEach((r,i)=>{const bg=i%2===1?ALT_BG:null;
+    const isFloor=r[0].startsWith('FLOOR');
+    midRows.push(new TableRow({children:[lCBold(r[0],3600,isFloor?ORANGE:BLK,bg),vC(r[1],2200,BLK,bg),lC(r[2],4200,bg)]}));
+  });
+  children.push(new Table({rows:midRows}));
+  children.push(spacer(60));
+
+  // ==================== 5. MARKET BENCHMARK ====================
+  children.push(heading('5. Italy IT Market 2026 \u2014 Benchmark Comparison',SZ_H1));
+  children.push(callout('Sources: Hays Salary Guide 2026 (Feb 2026, ~1,300 Italian tech professionals) \u00B7 ECA Salary Trends Europe 2025\u201326 \u00B7 Ravio Compensation Trends 2026. Key data: Average tech RAL '+EUR+'50,730 (below white-collar avg '+EUR+'56,360). Same-employer increases: 2\u20135%. Job change: 15\u201320%. Tech sector average: 5\u20137%. Italy inflation 2026: ~2%. Real salary growth: ~2\u20133%.',ACCENT));
+  children.push(spacer(20));
+  children.push(calloutBold('Assessment:','The algorithm is well-calibrated for the Italian IT market. Top performers receive above-market increases \u2014 this is an intentional design choice to correct accumulated gaps and reduce attrition risk. TOP 30% and MIDDLE employees with meaningful scores fall within the published market range. The only identified positioning below market expectation is for low-score MIDDLE employees with salaries above '+EUR+'55,000, who receive 0% versus a market expectation of 2\u20133%. This is a deliberate allocation decision: the zero-budget constraint requires concentration of available resources on the highest-value profiles.',GREEN));
+  children.push(spacer(20));
+
+  const mktData=[
+    ['Top10 junior < '+EUR+'36k','+12%','5\u20137% (same employer)','\u2191 Above \u2014 market gap correction',GREEN],
+    ['Top10 mid '+EUR+'45k','+11%','5\u20137%','\u2191 Above \u2014 intentional, top talent premium',GREEN],
+    ['Top10 senior '+EUR+'70k','+7%','5\u20137%','\u2713 In range',ACCENT2],
+    ['Top10 high > '+EUR+'70k','+3%','3\u20135%','\u2713 In range',ACCENT2],
+    ['Top30 mid '+EUR+'50k','+5%','3\u20135%','\u2713 In range',ACCENT2],
+    ['Middle good '+EUR+'38k','+2.5%','2\u20135%','\u2713 In range',ACCENT2],
+    ['Middle low score '+EUR+'60k','0%','2\u20133%','\u2193 Below \u2014 only gap vs market',RED],
+    ['Bottom 30%/10%','0%','0\u20131%','\u2713 OK \u2014 deliberate performance signal',ACCENT2]
+  ];
+  const mktRows=[new TableRow({children:[hCell('Profile',2500),hCell('This Algo',1200),hCell('Italy IT Market 2026',1800),hCell('Assessment',4500)]})];
+  mktData.forEach((r,i)=>{const bg=i%2===1?ALT_BG:null;
+    mktRows.push(new TableRow({children:[lC(r[0],2500,bg),vC(r[1],1200,ACCENT,bg),vC(r[2],1800,BLK,bg),lCBold(r[3],4500,r[4],bg)]}));
+  });
+  children.push(new Table({rows:mktRows}));
+  children.push(spacer(60));
+
+  // ==================== 6. DESIGN NOTES ====================
+  children.push(heading('6. Design Notes and Known Limitations',SZ_H1));
+  children.push(numberedItem(1,'Cliff edges at band thresholds ('+EUR+'36k, '+EUR+'45k, '+EUR+'55k, '+EUR+'60k, '+EUR+'70k). These are mathematically inherent in any banded system with '+EUR+'500 CEILING rounding. The number of affected cases is small and the absolute deltas are minimal.'));
+  children.push(numberedItem(2,'Manager rating bias in MIDDLE. Partially mitigated by the salary-based bias floors (+2.5% for <'+EUR+'40k, +1.5% for '+EUR+'40\u201355k). A calibration session before the next review cycle is recommended to further reduce this risk.'));
+  children.push(numberedItem(3,'MIDDLE low-score employees with salary >'+EUR+'55k receive 0%. This is the only identified gap versus Italian IT market expectations (2\u20133%). Under the zero-budget mandate, this is a deliberate trade-off: resources are concentrated on the highest-value profiles. A 1% universal floor for MIDDLE \u2264'+EUR+'60k may be considered in a future cycle if budget permits.'));
+  children.push(numberedItem(4,'Ranking data quality. An unrecognised ranking value results in the employee\'s salary being left unchanged (no increase applied, no error raised). A validation column has been added to the dashboard to flag any unrecognised values.'));
+  children.push(numberedItem(5,'EU Pay Transparency Directive (effective 7 June 2026). This documented algorithm constitutes the required written justification for pay dispersion between performance tiers. The algorithm applies identical rules to every employee within the same ranking and salary band, with no discretionary individual adjustments. The document should be versioned and retained for audit purposes.'));
+  children.push(spacer(40));
+
+  children.push(calloutBold('BOTTOM 30% and BOTTOM 10%:','Zero increase, no exceptions. The exact current salary is preserved \u2014 CEILING rounding is NOT applied. This is a deliberate performance signal consistent with the organisation\'s talent management framework.',RED));
+  children.push(spacer(80));
+
+  // ==================== FOOTER ====================
+  children.push(new Paragraph({spacing:{before:0,after:40},border:{top:{style:BorderStyle.SINGLE,size:2,color:ACCENT}},children:[]}));
+  children.push(para([txt('CONFIDENTIAL \u2014 This document is intended for internal compensation review purposes only. It contains the complete algorithm design, market references, and rate tables used for the 2026 Italy salary review.',{size:SZ_XS,italics:true,color:LTGRAY})]));
+  children.push(para([txt('Italy 2026 Salary Review \u2014 Algorithm Documentation \u2014 '+new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})+' \u2014 Algorithm version: final',{size:SZ_XS,color:LTGRAY})]));
+
+  const doc=new Document({
+    styles:{default:{document:{run:{font:FONT,size:SZ}}}},
+    sections:[{properties:{page:{margin:{top:720,bottom:720,left:900,right:900},size:{orientation:'landscape'}}},children}]
+  });
+  Packer.toBlob(doc).then(blob=>saveAs(blob,`Italy_2026_Salary_Review_Algorithm_${new Date().toISOString().slice(0,10)}.docx`));
 }
 
 // --- Light import: Base + Italy Algo (shared handler for v1 and v2) ---
