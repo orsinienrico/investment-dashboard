@@ -572,6 +572,7 @@ td.right { text-align: right; }
               <th class="right sortable" data-sort="shares">Quote <span class="sort-icon"></span></th>
               <th class="right sortable" data-sort="invested">Investito <span class="sort-icon"></span></th>
               <th class="right sortable" data-sort="price">Prezzo <span class="sort-icon"></span></th>
+              <th class="sortable" data-sort="priceDate">Agg. <span class="sort-icon"></span></th>
               <th class="right sortable" data-sort="dayChange">Var. Giorno <span class="sort-icon"></span></th>
               <th>Trend</th>
               <th class="right sortable" data-sort="value">Controvalore <span class="sort-icon"></span></th>
@@ -789,7 +790,10 @@ async function fetchTeleborsaNAV(teleborsaSlug) {
   const priceStr = match[1].replace('.', '').replace(',', '.');
   const nav = parseFloat(priceStr);
   if (isNaN(nav)) throw new Error('Invalid NAV: ' + match[1]);
-  return nav;
+  // Extract date: "Ultimo aggiornamento: <strong>25/03/2026</strong>"
+  const dateMatch = html.match(/aggiornamento[^<]*<strong>(\d{2}\/\d{2}\/\d{4})<\/strong>/);
+  const priceDate = dateMatch ? dateMatch[1] : null;
+  return { nav, priceDate };
 }
 
 // Compute totalCost for a holding from its config
@@ -842,6 +846,7 @@ function staticHolding(holding) {
     gainLoss: null,
     gainLossPct: null,
     sparkline: [],
+    priceDate: null,
     live: false,
     loaded: true
   };
@@ -857,7 +862,7 @@ function failedHolding(holding) {
     marketValue: holding.ticker ? null : cost,
     totalCost: cost,
     gainLoss: null, gainLossPct: null,
-    sparkline: [], live: false, loaded: !holding.ticker
+    sparkline: [], priceDate: null, live: false, loaded: !holding.ticker
   };
 }
 
@@ -910,6 +915,7 @@ async function loadPortfolio() {
           gainLoss: cost > 0 ? mv - cost : null,
           gainLossPct: cost > 0 ? ((mv - cost) / cost) * 100 : null,
           sparkline: sp.closes.slice(-5),
+          priceDate: new Date().toLocaleDateString('it-IT'),
           live: true, loaded: true
         };
         liveCount++;
@@ -938,8 +944,9 @@ async function loadPortfolio() {
     if (slugIdx > 1) await delay(3000);
 
     try {
-      navCache[slug] = await fetchTeleborsaNAV(slug);
-      console.log(`[Fund] ${slug} NAV = ${navCache[slug]}`);
+      const result = await fetchTeleborsaNAV(slug);
+      navCache[slug] = result;
+      console.log(`[Fund] ${slug} NAV = ${result.nav}, date = ${result.priceDate}`);
     } catch (e) {
       console.error(`[Fund] ${slug} failed:`, e.message);
       navCache[slug] = null;
@@ -948,13 +955,13 @@ async function loadPortfolio() {
 
   // Apply NAVs to all fund holdings
   for (const { h, i } of teleborsaHoldings) {
-    const nav = navCache[h.teleborsa];
-    if (nav == null) { errorCount++; continue; }
+    const cached = navCache[h.teleborsa];
+    if (cached == null || cached.nav == null) { errorCount++; continue; }
     const cost = holdingTotalCost(h);
-    const mv = nav * (h.shares || 0);
+    const mv = cached.nav * (h.shares || 0);
     portfolioData[i] = {
       ...h,
-      currentPrice: nav,
+      currentPrice: cached.nav,
       previousClose: null,
       dayChange: null, dayChangePct: null,
       marketValue: mv,
@@ -962,6 +969,7 @@ async function loadPortfolio() {
       gainLoss: cost > 0 ? mv - cost : null,
       gainLossPct: cost > 0 ? ((mv - cost) / cost) * 100 : null,
       sparkline: [],
+      priceDate: cached.priceDate || null,
       live: true, loaded: true
     };
     liveCount++;
@@ -1240,6 +1248,7 @@ function getSortValue(h, col) {
     case 'shares':   return h.shares != null ? h.shares : -1;
     case 'invested': return h.totalCost != null ? h.totalCost : -1;
     case 'price':    return h.currentPrice != null ? h.currentPrice : -1;
+    case 'priceDate':return (h.priceDate || '');
     case 'dayChange':return h.dayChangePct != null ? h.dayChangePct : -1e9;
     case 'value':    return h.marketValue != null ? h.marketValue : -1;
     case 'pl':       return h.gainLossPct != null ? h.gainLossPct : -1e9;
@@ -1299,6 +1308,7 @@ function renderHoldings(holdings, totalValue) {
         <td class="right">${sharesStr}</td>
         <td class="right">${investedStr}</td>
         <td class="right">${h.currentPrice != null ? fmtCurrency(h.currentPrice) : '—'}</td>
+        <td style="font-size:0.65rem;color:var(--text-muted);">${h.priceDate || '—'}</td>
         <td class="right ${gainClass(h.dayChangePct)}">${h.dayChangePct != null ? fmtPct(h.dayChangePct) : '—'}</td>
         <td>${renderSparkline(h.sparkline, sparkColor)}</td>
         <td class="right">${mv > 0 ? fmtCurrency(mv) : '—'}${staticTag}</td>
