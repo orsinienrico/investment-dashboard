@@ -148,43 +148,6 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Summary Cards */
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.summary-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 12px;
-  transition: border-color 0.2s;
-}
-
-.summary-card:hover {
-  border-color: var(--text-muted);
-}
-
-.summary-card .label {
-  font-size: 0.65rem;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin-bottom: 2px;
-}
-
-.summary-card .value {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.summary-card .sub {
-  font-size: 0.7rem;
-  margin-top: 2px;
-}
 
 .positive { color: var(--green); }
 .negative { color: var(--red); }
@@ -486,17 +449,16 @@ td.right { text-align: right; }
 @media (max-width: 600px) {
   .dashboard { padding: 10px; }
   .header h1 { font-size: 1.2rem; }
-  .summary-grid { grid-template-columns: 1fr 1fr; }
-  .summary-card .value { font-size: 1rem; }
+  .hero-summary { padding: 12px 14px 10px; }
+  .hero-value { font-size: 1.4rem; }
+  .hero-pl-badge { font-size: 0.65rem; padding: 2px 8px; }
+  .hero-chip { padding: 4px 8px; font-size: 0.6rem; }
   td { padding: 5px 6px; font-size: 0.7rem; }
   thead th { padding: 6px 6px; font-size: 0.6rem; }
   td.name-cell { max-width: 100px; }
   .donut-svg { width: 80px; height: 80px; }
 }
 
-@media (max-width: 400px) {
-  .summary-grid { grid-template-columns: 1fr; }
-}
 
 /* Fade in animation */
 .fade-in {
@@ -547,40 +509,92 @@ td.right { text-align: right; }
 }
 
 /* Executive Summary */
-.exec-summary {
+/* Hero Summary */
+.hero-summary {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px 16px;
+  border-radius: 10px;
+  padding: 16px 20px 14px;
   margin-bottom: 12px;
-  font-size: 0.7rem;
-  line-height: 1.6;
-  color: var(--text-secondary);
 }
 
-.exec-summary h3 {
-  font-size: 0.75rem;
+.hero-top {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.hero-date {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.hero-value {
+  font-size: 1.8rem;
+  font-weight: 800;
   color: var(--text-primary);
-  margin-bottom: 8px;
-  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
-.exec-summary ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.exec-summary li {
-  padding: 1px 0;
-}
-
-.exec-summary li::before {
-  content: '›';
-  color: var(--accent);
-  margin-right: 6px;
+.hero-pl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
+.hero-pl-badge.up { background: var(--green-dim); color: var(--green); }
+.hero-pl-badge.down { background: var(--red-dim); color: var(--red); }
+
+.hero-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.hero-chip .chip-val {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.hero-chip .chip-icon {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.hero-narrative {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  margin-top: 2px;
+}
+.hero-narrative strong { color: var(--text-secondary); }
 
 /* Portfolio Description */
 .portfolio-desc {
@@ -639,10 +653,8 @@ td.right { text-align: right; }
 
   <div id="mainContent" style="display:none;">
     <!-- Executive Summary -->
-    <div id="execSummary" class="exec-summary"></div>
+    <div id="execSummary" class="hero-summary"></div>
 
-    <!-- Summary Cards -->
-    <div class="summary-grid" id="summaryGrid"></div>
 
     <!-- Charts -->
     <div class="charts-grid" id="chartsGrid"></div>
@@ -1175,17 +1187,12 @@ function renderDashboard() {
   const liveValue = liveOnly.reduce((s, h) => s + (h.marketValue || 0), 0);
   const dayGainPct = liveValue > 0 ? (dayGain / (liveValue - dayGain)) * 100 : 0;
 
-  // Count by type
-  const typeCount = {};
-  all.forEach(h => { typeCount[h.type] = (typeCount[h.type] || 0) + 1; });
-
   renderExecSummary(all, totalValue, totalCost, dayGain, dayGainPct);
-  renderSummary(totalValue, totalCost, dayGain, dayGainPct, all.length, typeCount);
   renderCharts(all, totalValue);
   renderHoldings(portfolioData, totalValue);
 }
 
-// Executive Summary (dynamic, data-driven)
+// Executive Summary — Hero section
 function renderExecSummary(holdings, totalValue, totalCost, dayGain, dayGainPct) {
   const el = document.getElementById('execSummary');
   const today = new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -1193,105 +1200,76 @@ function renderExecSummary(holdings, totalValue, totalCost, dayGain, dayGainPct)
   const estH = holdings.filter(h => h.estimated);
   const totalPL = totalValue - totalCost;
   const totalPLPct = totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0;
+  const hasEstimated = estH.length > 0;
+  const estMark = hasEstimated ? '<span title="Include valori stimati" style="color:var(--yellow);cursor:help;font-size:0.6em;vertical-align:super;">*</span>' : '';
 
   // Best & worst performers
   const withPL = holdings.filter(h => h.gainLossPct != null).sort((a, b) => b.gainLossPct - a.gainLossPct);
   const best = withPL.length > 0 ? withPL[0] : null;
   const worst = withPL.length > 0 ? withPL[withPL.length - 1] : null;
 
-  // Allocation by type
-  const typeAlloc = {};
-  holdings.forEach(h => { typeAlloc[h.type] = (typeAlloc[h.type] || 0) + (h.marketValue || 0); });
-  const topType = Object.entries(typeAlloc).sort((a, b) => b[1] - a[1])[0];
-
   // Day change summary
   const dayUp = liveH.filter(h => (h.dayChangePct || 0) > 0).length;
   const dayDown = liveH.filter(h => (h.dayChangePct || 0) < 0).length;
-
-  const lines = [];
-  lines.push(`Portafoglio composto da <strong>${holdings.length}</strong> posizioni per un controvalore di <strong>${fmtCurrency(totalValue)}</strong> su <strong>${fmtCurrency(totalCost)}</strong> investiti.`);
-
-  if (totalPL >= 0) {
-    lines.push(`Performance complessiva: <span class="positive"><strong>+${fmtCurrency(totalPL)}</strong> (+${totalPLPct.toFixed(2)}%)</span> rispetto al capitale investito.`);
-  } else {
-    lines.push(`Performance complessiva: <span class="negative"><strong>${fmtCurrency(totalPL)}</strong> (${totalPLPct.toFixed(2)}%)</span> rispetto al capitale investito.`);
-  }
-
-  lines.push(`<strong>${liveH.length}</strong> posizioni con prezzo live, <strong>${estH.length}</strong> stimate, <strong>${holdings.length - liveH.length - estH.length}</strong> a valore nominale/costo.`);
-
-  if (liveH.length > 0) {
-    const dayDir = dayGain >= 0 ? 'positiva' : 'negativa';
-    lines.push(`Giornata ${dayDir}: <strong class="${gainClass(dayGain)}">${dayGain >= 0 ? '+' : ''}${fmtCurrency(dayGain)}</strong> (${fmtPct(dayGainPct)}). ${dayUp} titoli in rialzo, ${dayDown} in ribasso.`);
-  }
-
-  if (best) {
-    lines.push(`Migliore: <strong>${best.name}</strong> a <span class="positive">${fmtPct(best.gainLossPct)}</span>. Peggiore: <strong>${worst.name}</strong> a <span class="negative">${fmtPct(worst.gainLossPct)}</span>.`);
-  }
-
-  if (topType) {
-    const topPct = (topType[1] / totalValue * 100).toFixed(1);
-    lines.push(`Asset class principale: <strong>${TYPE_LABELS[topType[0]] || topType[0]}</strong> (${topPct}% del portafoglio).`);
-  }
 
   // Issuer concentration
   const issuerMap = {};
   holdings.forEach(h => { issuerMap[h.issuer || 'Altro'] = (issuerMap[h.issuer || 'Altro'] || 0) + (h.marketValue || 0); });
   const topIssuer = Object.entries(issuerMap).sort((a, b) => b[1] - a[1])[0];
-  if (topIssuer) {
-    const iPct = (topIssuer[1] / totalValue * 100).toFixed(1);
-    lines.push(`Emittente principale: <strong>${topIssuer[0]}</strong> con ${iPct}% dell'esposizione totale.`);
-  }
 
   // Fixed income weight
   const fixedTypes = ['btp', 'deposit'];
   const fixedValue = holdings.filter(h => fixedTypes.includes(h.type)).reduce((s, h) => s + (h.marketValue || 0), 0);
   const fixedPct = totalValue > 0 ? (fixedValue / totalValue * 100).toFixed(1) : 0;
-  lines.push(`Componente a reddito fisso (BTP + depositi): <strong>${fixedPct}%</strong> del portafoglio.`);
+
+  // P/L badge
+  const plUp = totalPL >= 0;
+  const plBadge = `<span class="hero-pl-badge ${plUp ? 'up' : 'down'}">${plUp ? '+' : ''}${fmtCurrency(totalPL)} (${plUp ? '+' : ''}${totalPLPct.toFixed(1)}%)</span>`;
+
+  // Day change chip
+  const dayChip = liveH.length > 0 ? `
+    <div class="hero-chip">
+      <span class="chip-icon">${dayGain >= 0 ? '&#9650;' : '&#9660;'}</span>
+      Oggi
+      <span class="chip-val ${gainClass(dayGain)}">${dayGain >= 0 ? '+' : ''}${fmtCurrency(dayGain)} (${fmtPct(dayGainPct)})</span>
+    </div>` : '';
+
+  // Chips
+  const chips = [];
+  chips.push(dayChip);
+  chips.push(`<div class="hero-chip">Investito <span class="chip-val">${fmtCurrency(totalCost)}</span></div>`);
+  chips.push(`<div class="hero-chip">Posizioni <span class="chip-val">${holdings.length}</span> <span style="color:var(--text-muted);font-size:0.55rem;">(${liveH.length} live${estH.length > 0 ? ', ' + estH.length + ' est.' : ''})</span></div>`);
+  if (best) {
+    chips.push(`<div class="hero-chip">Best <span class="chip-val positive" title="${best.name}">${best.ticker || best.name.substring(0, 10)} ${fmtPct(best.gainLossPct)}</span></div>`);
+    chips.push(`<div class="hero-chip">Worst <span class="chip-val negative" title="${worst.name}">${worst.ticker || worst.name.substring(0, 10)} ${fmtPct(worst.gainLossPct)}</span></div>`);
+  }
+  chips.push(`<div class="hero-chip">Reddito fisso <span class="chip-val">${fixedPct}%</span></div>`);
+
+  // Narrative line
+  let narrative = '';
+  if (liveH.length > 0) {
+    const dayDir = dayGain >= 0 ? 'positiva' : 'negativa';
+    narrative = `Giornata ${dayDir} con <strong>${dayUp}</strong> titoli in rialzo e <strong>${dayDown}</strong> in ribasso.`;
+    if (topIssuer) {
+      const iPct = (topIssuer[1] / totalValue * 100).toFixed(0);
+      narrative += ` Maggiore esposizione: <strong>${topIssuer[0]}</strong> (${iPct}%).`;
+    }
+  }
 
   el.innerHTML = `
-    <h3>Report ${today}</h3>
-    <ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul>
+    <div class="hero-date">Report ${today}</div>
+    <div class="hero-top">
+      <span class="hero-value">${fmtCurrency(totalValue)}${estMark}</span>
+      ${plBadge}
+    </div>
+    <div class="hero-metrics">${chips.join('')}</div>
+    ${narrative ? `<div class="hero-narrative">${narrative}</div>` : ''}
   `;
 }
 
 // Type labels in Italian
 const TYPE_LABELS = { stock: 'Azioni', btp: 'BTP', fund: 'Fondi', policy: 'Polizze', etf: 'ETF', etc: 'ETC', crypto: 'Crypto', deposit: 'Deposito' };
 
-// Summary cards
-function renderSummary(totalValue, totalCost, dayGain, dayGainPct, count, typeCount) {
-  const grid = document.getElementById('summaryGrid');
-  const livePositions = portfolioData.filter(h => h.live);
-  const hasEstimated = portfolioData.some(h => h.estimated);
-  const estNote = hasEstimated ? '<span title="Include valori stimati da prezzo acquisto" style="color:var(--yellow);cursor:help;">*</span>' : '';
-  grid.innerHTML = `
-    <div class="summary-card fade-in">
-      <div class="label">Valore Portafoglio</div>
-      <div class="value">${fmtCurrency(totalValue)}${estNote}</div>
-      <div class="sub neutral">di cui ${fmtCurrency(livePositions.reduce((s,h) => s + (h.marketValue||0), 0))} live</div>
-    </div>
-    <div class="summary-card fade-in">
-      <div class="label">Variazione Giornaliera</div>
-      <div class="value ${gainClass(dayGain)}">${dayGain >= 0 ? '+' : ''}${fmtCurrency(dayGain)}</div>
-      <div class="sub ${gainClass(dayGainPct)}">${fmtPct(dayGainPct)}</div>
-    </div>
-    <div class="summary-card fade-in">
-      <div class="label">Totale Investito</div>
-      <div class="value">${fmtCurrency(totalCost)}</div>
-      <div class="sub neutral">${count} posizioni</div>
-    </div>
-    <div class="summary-card fade-in">
-      <div class="label">P/L Complessivo</div>
-      <div class="value ${gainClass(totalValue - totalCost)}">${totalValue - totalCost >= 0 ? '+' : ''}${fmtCurrency(totalValue - totalCost)}${estNote}</div>
-      <div class="sub ${gainClass(totalValue - totalCost)}">${fmtPct(totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0)} sul capitale</div>
-    </div>
-    <div class="summary-card fade-in">
-      <div class="label">Asset Mix</div>
-      <div class="value" style="font-size:0.85rem;">${Object.entries(typeCount).map(([t,c]) => `${c} ${TYPE_LABELS[t] || t}`).join(', ')}</div>
-    </div>
-  `;
-}
-
-// Allocation grid (replaces donut)
 // Charts — 4-panel 2x2 grid
 function renderCharts(holdings, totalValue) {
   const grid = document.getElementById('chartsGrid');
