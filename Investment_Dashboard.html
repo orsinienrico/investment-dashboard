@@ -150,16 +150,16 @@ body {
 /* Summary Cards */
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .summary-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: 8px;
+  padding: 10px 12px;
   transition: border-color 0.2s;
 }
 
@@ -168,22 +168,22 @@ body {
 }
 
 .summary-card .label {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
 }
 
 .summary-card .value {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .summary-card .sub {
-  font-size: 0.85rem;
-  margin-top: 4px;
+  font-size: 0.7rem;
+  margin-top: 2px;
 }
 
 .positive { color: var(--green); }
@@ -194,13 +194,13 @@ body {
 .charts-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .chart-card table td {
-  padding: 6px 12px;
-  font-size: 0.8rem;
+  padding: 3px 8px;
+  font-size: 0.7rem;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -212,14 +212,14 @@ body {
 .chart-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 20px;
+  border-radius: 8px;
+  padding: 12px;
 }
 
 .chart-card h3 {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   font-weight: 500;
 }
 
@@ -232,35 +232,35 @@ body {
 .donut-wrapper {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 12px;
   flex-wrap: wrap;
   justify-content: center;
 }
 
 .donut-svg {
-  width: 180px;
-  height: 180px;
+  width: 120px;
+  height: 120px;
   flex-shrink: 0;
 }
 
 .donut-legend {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 120px;
+  gap: 3px;
+  min-width: 100px;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.8rem;
+  gap: 6px;
+  font-size: 0.65rem;
 }
 
 .legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
   flex-shrink: 0;
 }
 
@@ -279,43 +279,43 @@ body {
 .perf-bars {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 3px;
 }
 
 .perf-bar-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
 .perf-bar-label {
-  font-size: 0.8rem;
+  font-size: 0.65rem;
   color: var(--text-secondary);
-  width: 60px;
+  width: 55px;
   text-align: right;
   flex-shrink: 0;
 }
 
 .perf-bar-track {
   flex: 1;
-  height: 22px;
+  height: 14px;
   background: var(--bg-secondary);
-  border-radius: 4px;
+  border-radius: 3px;
   position: relative;
   overflow: hidden;
 }
 
 .perf-bar-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 3px;
   transition: width 0.5s ease;
   min-width: 2px;
 }
 
 .perf-bar-value {
-  font-size: 0.8rem;
+  font-size: 0.65rem;
   font-weight: 500;
-  width: 65px;
+  width: 55px;
   text-align: right;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
@@ -515,11 +515,11 @@ td.right { text-align: right; }
   .dashboard { padding: 10px; }
   .header h1 { font-size: 1.2rem; }
   .summary-grid { grid-template-columns: 1fr 1fr; }
-  .summary-card .value { font-size: 1.2rem; }
+  .summary-card .value { font-size: 1rem; }
   td { padding: 5px 6px; font-size: 0.7rem; }
   thead th { padding: 6px 6px; font-size: 0.6rem; }
   td.name-cell { max-width: 100px; }
-  .donut-svg { width: 140px; height: 140px; }
+  .donut-svg { width: 100px; height: 100px; }
 }
 
 @media (max-width: 400px) {
@@ -1140,9 +1140,9 @@ function renderDonut(data, maxSlices = 10) {
     slices.push({ label: 'Other', value: otherValue, pct: otherPct });
   }
 
-  const size = 180;
+  const size = 120;
   const cx = size / 2, cy = size / 2;
-  const outerR = 80, innerR = 50;
+  const outerR = 54, innerR = 34;
   let cumAngle = -90;
   let paths = '';
 
@@ -1188,8 +1188,8 @@ function renderDonut(data, maxSlices = 10) {
     <div class="donut-wrapper">
       <svg class="donut-svg" viewBox="0 0 ${size} ${size}">
         ${paths}
-        <text x="${cx}" y="${cy - 6}" text-anchor="middle" fill="var(--text-primary)" font-size="16" font-weight="700">${slices.length}</text>
-        <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="var(--text-secondary)" font-size="10">assets</text>
+        <text x="${cx}" y="${cy - 3}" text-anchor="middle" fill="var(--text-primary)" font-size="12" font-weight="700">${slices.length}</text>
+        <text x="${cx}" y="${cy + 9}" text-anchor="middle" fill="var(--text-secondary)" font-size="7">assets</text>
       </svg>
       <div class="donut-legend">${legend}</div>
     </div>
