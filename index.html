@@ -677,12 +677,20 @@ function fetchWithTimeout(url, opts = {}, timeoutMs = 12000) {
   return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
-// Proxy strategies — tries multiple proxies in order
+// Proxy strategies — tries multiple proxies in order (fastest first)
 const PROXIES = [
+  {
+    name: 'corsproxy.io',
+    fetch: async (url) => {
+      const resp = await fetchWithTimeout(`https://corsproxy.io/?url=${encodeURIComponent(url)}`, {}, 8000);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      return await resp.text();
+    }
+  },
   {
     name: 'allorigins/get',
     fetch: async (url) => {
-      const resp = await fetchWithTimeout(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {}, 12000);
+      const resp = await fetchWithTimeout(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {}, 8000);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const w = await resp.json();
       if (!w.contents) throw new Error('Empty');
@@ -692,15 +700,7 @@ const PROXIES = [
   {
     name: 'allorigins/raw',
     fetch: async (url) => {
-      const resp = await fetchWithTimeout(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, {}, 12000);
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      return await resp.text();
-    }
-  },
-  {
-    name: 'corsproxy.io',
-    fetch: async (url) => {
-      const resp = await fetchWithTimeout(`https://corsproxy.io/?url=${encodeURIComponent(url)}`, {}, 12000);
+      const resp = await fetchWithTimeout(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, {}, 8000);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       return await resp.text();
     }
