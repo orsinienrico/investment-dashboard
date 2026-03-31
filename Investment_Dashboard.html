@@ -490,7 +490,8 @@ td.right { text-align: right; }
 
   /* Movers */
   .mover-row { gap: 4px; padding: 4px 0; }
-  .mover-name { font-size: 0.6rem; }
+  .mover-ticker { font-size: 0.6rem; }
+  .mover-desc { font-size: 0.5rem; }
   .mover-pct { font-size: 0.6rem; width: 50px; }
   .mover-euro { font-size: 0.55rem; width: 55px; }
 
@@ -558,9 +559,11 @@ td.right { text-align: right; }
 /* Top movers */
 .movers-section { margin-bottom: 6px; }
 .movers-section h4 { font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-.mover-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+.mover-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
 .mover-row:last-child { border-bottom: none; }
-.mover-name { font-size: 0.7rem; color: var(--text-primary); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mover-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
+.mover-ticker { font-size: 0.7rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mover-desc { font-size: 0.55rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
 .mover-pct { font-size: 0.7rem; font-weight: 600; font-variant-numeric: tabular-nums; width: 60px; text-align: right; flex-shrink: 0; }
 .mover-euro { font-size: 0.65rem; color: var(--text-secondary); width: 65px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .movers-divider { border-top: 1px solid var(--border); margin: 6px 0; }
@@ -1390,8 +1393,13 @@ function renderCharts(holdings, totalValue) {
 
   function moverRow(h) {
     const dayEur = (h.dayChange || 0) * (h.shares || 0);
+    const ticker = h.ticker || '';
+    const desc = h.name || '';
     return `<div class="mover-row">
-      <span class="mover-name">${h.ticker || h.name.substring(0, 12)}</span>
+      <div class="mover-info">
+        <span class="mover-ticker">${ticker}</span>
+        <span class="mover-desc">${desc}</span>
+      </div>
       <span class="mover-pct ${gainClass(h.dayChangePct)}">${fmtPct(h.dayChangePct)}</span>
       <span class="mover-euro ${gainClass(dayEur)}">${dayEur >= 0 ? '+' : ''}${fmtCurrency(dayEur)}</span>
     </div>`;
