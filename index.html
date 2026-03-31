@@ -155,10 +155,14 @@ body {
 
 /* Charts Section */
 .charts-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 16px;
+}
+.charts-grid > .chart-card {
+  flex: 1 1 calc(50% - 6px);
+  min-width: 280px;
 }
 
 .chart-card table td {
@@ -205,16 +209,17 @@ body {
 }
 
 .donut-svg {
-  width: 100px;
-  height: 100px;
+  width: 85px;
+  height: 85px;
   flex-shrink: 0;
 }
 
 .donut-legend {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 80px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px 10px;
+  min-width: 0;
+  flex: 1;
 }
 
 .legend-item {
@@ -441,7 +446,7 @@ td.right { text-align: right; }
 
 /* Responsive — Tablet */
 @media (max-width: 700px) {
-  .charts-grid { grid-template-columns: 1fr; gap: 10px; }
+  .charts-grid > .chart-card { flex: 1 1 100%; min-width: 0; }
   .chart-card--movers { order: -1; }
   .chart-card { padding: 12px 14px; }
   .desc-grid { grid-template-columns: 1fr; }
@@ -472,8 +477,8 @@ td.right { text-align: right; }
   .charts-grid { gap: 8px; margin-bottom: 10px; }
   .chart-card { padding: 10px 12px; border-radius: 8px; }
   .chart-card h3 { font-size: 0.6rem; margin-bottom: 8px; padding-bottom: 4px; }
-  .donut-svg { width: 75px; height: 75px; }
-  .donut-legend { gap: 1px; }
+  .donut-svg { width: 70px; height: 70px; }
+  .donut-legend { grid-template-columns: 1fr 1fr; gap: 1px 6px; }
   .legend-item { font-size: 0.55rem; }
 
   /* Movers */
@@ -538,9 +543,9 @@ td.right { text-align: right; }
 }
 
 /* Risk profile stacked bar */
-.risk-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+.risk-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 8px; }
 .risk-bar-segment { height: 100%; }
-.risk-labels { display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.55rem; color: var(--text-secondary); }
+.risk-labels { display: flex; justify-content: space-between; margin-top: 3px; font-size: 0.55rem; color: var(--text-secondary); }
 
 /* Top movers */
 .movers-section { margin-bottom: 6px; }
