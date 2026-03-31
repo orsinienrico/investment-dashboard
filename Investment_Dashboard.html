@@ -669,8 +669,8 @@ const CHART_COLORS = [
 
 let portfolioData = [];
 let isLoading = false;
-let sortColumn = 'weight';
-let sortDirection = 'desc';
+let sortColumn = 'issuer';
+let sortDirection = 'asc';
 
 // Format currency
 function fmt(n, decimals = 2) {
@@ -871,22 +871,38 @@ function staticHolding(holding) {
     gainLossPct: null,
     sparkline: [],
     priceDate: null,
-    live: false,
-    loaded: true
+    live: false, loaded: true, estimated: false
   };
 }
 
-// Holding that failed to load
+// Holding pending live price (initial state before fetch)
 function failedHolding(holding) {
   const cost = holdingTotalCost(holding);
   return {
     ...holding,
     currentPrice: null, previousClose: null,
     dayChange: null, dayChangePct: null,
-    marketValue: holding.ticker ? null : cost,
+    marketValue: null,
     totalCost: cost,
     gainLoss: null, gainLossPct: null,
-    sparkline: [], priceDate: null, live: false, loaded: !holding.ticker
+    sparkline: [], priceDate: null, live: false, loaded: false, estimated: false
+  };
+}
+
+// Fallback: use avgCost as estimated price when live fetch fails
+function estimatedHolding(holding) {
+  const cost = holdingTotalCost(holding);
+  const price = holding.avgCost || null;
+  const mv = price != null && holding.shares != null ? price * holding.shares : cost;
+  return {
+    ...holding,
+    currentPrice: price,
+    previousClose: null,
+    dayChange: null, dayChangePct: null,
+    marketValue: mv,
+    totalCost: cost,
+    gainLoss: null, gainLossPct: null,
+    sparkline: [], priceDate: null, live: false, loaded: true, estimated: true
   };
 }
 
@@ -940,7 +956,7 @@ async function loadPortfolio() {
           gainLossPct: cost > 0 ? ((mv - cost) / cost) * 100 : null,
           sparkline: sp.closes.slice(-5),
           priceDate: new Date().toLocaleDateString('it-IT'),
-          live: true, loaded: true
+          live: true, loaded: true, estimated: false
         };
         liveCount++;
       });
@@ -994,10 +1010,17 @@ async function loadPortfolio() {
       gainLossPct: cost > 0 ? ((mv - cost) / cost) * 100 : null,
       sparkline: [],
       priceDate: cached.priceDate || null,
-      live: true, loaded: true
+      live: true, loaded: true, estimated: false
     };
     liveCount++;
   }
+
+  // Fallback: any still-pending holdings get estimated from avgCost
+  portfolioData.forEach((h, i) => {
+    if (!h.loaded) {
+      portfolioData[i] = estimatedHolding(PORTFOLIO[i]);
+    }
+  });
 
   renderDashboard();
 
@@ -1052,10 +1075,12 @@ const TYPE_LABELS = { stock: 'Azioni', btp: 'BTP', fund: 'Fondi', policy: 'Poliz
 function renderSummary(totalValue, totalCost, dayGain, dayGainPct, count, typeCount) {
   const grid = document.getElementById('summaryGrid');
   const livePositions = portfolioData.filter(h => h.live);
+  const hasEstimated = portfolioData.some(h => h.estimated);
+  const estNote = hasEstimated ? '<span title="Include valori stimati da prezzo acquisto" style="color:var(--yellow);cursor:help;">*</span>' : '';
   grid.innerHTML = `
     <div class="summary-card fade-in">
       <div class="label">Valore Portafoglio</div>
-      <div class="value">${fmtCurrency(totalValue)}</div>
+      <div class="value">${fmtCurrency(totalValue)}${estNote}</div>
       <div class="sub neutral">di cui ${fmtCurrency(livePositions.reduce((s,h) => s + (h.marketValue||0), 0))} live</div>
     </div>
     <div class="summary-card fade-in">
@@ -1341,6 +1366,8 @@ function renderHoldings(holdings, totalValue) {
 
   tbody.innerHTML = sorted.map(h => {
     const pending = !h.loaded && (h.ticker || h.teleborsa);
+    const est = h.estimated;
+    const star = est ? '<span title="Prezzo di acquisto (stimato)" style="color:var(--yellow);cursor:help;">*</span>' : '';
     const ld = '<span class="cell-loading">caricamento...</span>';
     const mv = h.marketValue || 0;
     const weight = totalValue > 0 ? (mv / totalValue) * 100 : 0;
@@ -1349,9 +1376,11 @@ function renderHoldings(holdings, totalValue) {
     const typeLabel = TYPE_LABELS[h.type] || h.type;
     const sharesStr = h.shares != null ? h.shares.toLocaleString('it-IT') : '—';
     const investedStr = h.totalCost != null ? fmtCurrency(h.totalCost) : '—';
-    const staticTag = h.live ? '' : pending ? '' : h.isNominal
-      ? ' <span class="type-tag" style="background:#555c6622;color:#555c66;">nominale</span>'
-      : ' <span class="type-tag" style="background:#555c6622;color:#555c66;">costo</span>';
+    const staticTag = h.live ? '' : pending ? '' : est
+      ? ' <span class="type-tag" style="background:#a18c5222;color:var(--yellow);">stimato*</span>'
+      : h.isNominal
+        ? ' <span class="type-tag" style="background:#555c6622;color:#555c66;">nominale</span>'
+        : ' <span class="type-tag" style="background:#555c6622;color:#555c66;">costo</span>';
 
     return `
       <tr class="fade-in">
@@ -1361,18 +1390,18 @@ function renderHoldings(holdings, totalValue) {
         <td><span class="type-tag ${typeClass}">${typeLabel}</span></td>
         <td class="right">${sharesStr}</td>
         <td class="right">${investedStr}</td>
-        <td class="right">${pending ? ld : (h.currentPrice != null ? fmtCurrency(h.currentPrice) : '—')}</td>
+        <td class="right">${pending ? ld : (h.currentPrice != null ? fmtCurrency(h.currentPrice) + star : '—')}</td>
         <td style="font-size:0.65rem;color:var(--text-muted);">${pending ? '' : (h.priceDate || '—')}</td>
         <td class="right ${gainClass(h.dayChangePct)}">${pending ? '' : (h.dayChangePct != null ? fmtPct(h.dayChangePct) : '—')}</td>
         <td>${pending ? '' : renderSparkline(h.sparkline, sparkColor)}</td>
-        <td class="right">${pending ? ld : (mv > 0 ? fmtCurrency(mv) : '—')}${staticTag}</td>
+        <td class="right">${pending ? ld : (mv > 0 ? fmtCurrency(mv) + star : '—')}${staticTag}</td>
         <td class="right ${gainClass(h.gainLoss)}">
-          ${pending ? '' : (h.gainLoss != null ? `${h.gainLoss >= 0 ? '+' : ''}${fmtCurrency(h.gainLoss)}` : '—')}
-          ${pending ? '' : (h.gainLossPct != null ? `<br><small>${fmtPct(h.gainLossPct)}</small>` : '')}
+          ${pending ? '' : (h.gainLoss != null ? `${h.gainLoss >= 0 ? '+' : ''}${fmtCurrency(h.gainLoss)}${star}` : '—')}
+          ${pending ? '' : (h.gainLossPct != null ? `<br><small>${fmtPct(h.gainLossPct)}${star}</small>` : '')}
         </td>
         <td class="right">
           <div class="weight-bar-container">
-            <span>${weight.toFixed(1)}%</span>
+            <span>${weight.toFixed(1)}%${star}</span>
             <div class="weight-bar"><div class="weight-bar-fill" style="width:${weight}%"></div></div>
           </div>
         </td>
@@ -1405,7 +1434,7 @@ function initDashboard() {
     });
     // Mark default sort column
     const defaultTh = document.querySelector(`thead th[data-sort="${sortColumn}"]`);
-    if (defaultTh) defaultTh.classList.add('sort-desc');
+    if (defaultTh) defaultTh.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
 
     loadPortfolio();
   } catch (e) {
