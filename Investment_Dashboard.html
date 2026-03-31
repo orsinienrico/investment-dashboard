@@ -559,6 +559,82 @@ td.right { text-align: right; }
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Executive Summary */
+.exec-summary {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  font-size: 0.7rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.exec-summary h3 {
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.exec-summary ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.exec-summary li {
+  padding: 1px 0;
+}
+
+.exec-summary li::before {
+  content: '›';
+  color: var(--accent);
+  margin-right: 6px;
+  font-weight: 700;
+}
+
+/* Portfolio Description */
+.portfolio-desc {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.portfolio-desc h2 {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.desc-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 16px;
+}
+
+.desc-block h4 {
+  font-size: 0.65rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 6px;
+}
+
+.desc-block p {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+@media (max-width: 700px) {
+  .desc-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
@@ -576,6 +652,9 @@ td.right { text-align: right; }
   <div id="statusBar" class="status-bar">Loading portfolio data...</div>
 
   <div id="mainContent" style="display:none;">
+    <!-- Executive Summary -->
+    <div id="execSummary" class="exec-summary"></div>
+
     <!-- Summary Cards -->
     <div class="summary-grid" id="summaryGrid"></div>
 
@@ -606,6 +685,28 @@ td.right { text-align: right; }
           </thead>
           <tbody id="holdingsBody"></tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Portfolio Description -->
+    <div class="portfolio-desc">
+      <h2>Il Mio Portafoglio</h2>
+      <div class="desc-grid">
+        <div class="desc-block">
+          <h4>Strategia</h4>
+          <p>Portafoglio diversificato con orizzonte medio-lungo termine. L'allocazione privilegia strumenti a basso rischio (BTP, depositi vincolati, polizze) per la componente core, affiancati da fondi bilanciati e azionari UnipolSai per la crescita del capitale. Una quota satellite è dedicata ad azioni singole, ETF/ETC tematici e titoli ad alta volatilità.</p>
+        </div>
+        <div class="desc-block">
+          <h4>Composizione</h4>
+          <p><strong>Reddito fisso:</strong> 4 BTP italiani (indicizzati inflazione, valore, ordinari) + 3 depositi vincolati (Illimity, CRV) con rendimenti 2.3%-3%.<br>
+          <strong>Fondi UnipolSai:</strong> 6 fondi interni tra azionario globale, bilanciato, prudente, dinamico ed equilibrato — diversificazione per profilo di rischio.<br>
+          <strong>Polizze:</strong> MultiGest (multiramo) e GestiMix (unit-linked) per protezione e rendimento.<br>
+          <strong>Azioni & ETF/ETC:</strong> Enel, Deutsche Telekom, SoundHound AI, D-Wave Quantum, Gold ETC, Crude Oil ETC, Copper Miners ETF — esposizione a settori growth, energy, commodities e tecnologia.</p>
+        </div>
+        <div class="desc-block">
+          <h4>Fonti Dati</h4>
+          <p>Prezzi azioni/ETF/ETC: Yahoo Finance (live). NAV fondi UnipolSai: Teleborsa (differiti 15min). BTP, polizze e depositi: valore nominale/costo. I dati vengono aggiornati ad ogni apertura della dashboard.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -1092,9 +1193,79 @@ function renderDashboard() {
   const typeCount = {};
   all.forEach(h => { typeCount[h.type] = (typeCount[h.type] || 0) + 1; });
 
+  renderExecSummary(all, totalValue, totalCost, dayGain, dayGainPct);
   renderSummary(totalValue, totalCost, dayGain, dayGainPct, all.length, typeCount);
   renderCharts(all, totalValue);
   renderHoldings(portfolioData, totalValue);
+}
+
+// Executive Summary (dynamic, data-driven)
+function renderExecSummary(holdings, totalValue, totalCost, dayGain, dayGainPct) {
+  const el = document.getElementById('execSummary');
+  const today = new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+  const liveH = holdings.filter(h => h.live);
+  const estH = holdings.filter(h => h.estimated);
+  const totalPL = totalValue - totalCost;
+  const totalPLPct = totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0;
+
+  // Best & worst performers
+  const withPL = holdings.filter(h => h.gainLossPct != null).sort((a, b) => b.gainLossPct - a.gainLossPct);
+  const best = withPL.length > 0 ? withPL[0] : null;
+  const worst = withPL.length > 0 ? withPL[withPL.length - 1] : null;
+
+  // Allocation by type
+  const typeAlloc = {};
+  holdings.forEach(h => { typeAlloc[h.type] = (typeAlloc[h.type] || 0) + (h.marketValue || 0); });
+  const topType = Object.entries(typeAlloc).sort((a, b) => b[1] - a[1])[0];
+
+  // Day change summary
+  const dayUp = liveH.filter(h => (h.dayChangePct || 0) > 0).length;
+  const dayDown = liveH.filter(h => (h.dayChangePct || 0) < 0).length;
+
+  const lines = [];
+  lines.push(`Portafoglio composto da <strong>${holdings.length}</strong> posizioni per un controvalore di <strong>${fmtCurrency(totalValue)}</strong> su <strong>${fmtCurrency(totalCost)}</strong> investiti.`);
+
+  if (totalPL >= 0) {
+    lines.push(`Performance complessiva: <span class="positive"><strong>+${fmtCurrency(totalPL)}</strong> (+${totalPLPct.toFixed(2)}%)</span> rispetto al capitale investito.`);
+  } else {
+    lines.push(`Performance complessiva: <span class="negative"><strong>${fmtCurrency(totalPL)}</strong> (${totalPLPct.toFixed(2)}%)</span> rispetto al capitale investito.`);
+  }
+
+  lines.push(`<strong>${liveH.length}</strong> posizioni con prezzo live, <strong>${estH.length}</strong> stimate, <strong>${holdings.length - liveH.length - estH.length}</strong> a valore nominale/costo.`);
+
+  if (liveH.length > 0) {
+    const dayDir = dayGain >= 0 ? 'positiva' : 'negativa';
+    lines.push(`Giornata ${dayDir}: <strong class="${gainClass(dayGain)}">${dayGain >= 0 ? '+' : ''}${fmtCurrency(dayGain)}</strong> (${fmtPct(dayGainPct)}). ${dayUp} titoli in rialzo, ${dayDown} in ribasso.`);
+  }
+
+  if (best) {
+    lines.push(`Migliore: <strong>${best.name}</strong> a <span class="positive">${fmtPct(best.gainLossPct)}</span>. Peggiore: <strong>${worst.name}</strong> a <span class="negative">${fmtPct(worst.gainLossPct)}</span>.`);
+  }
+
+  if (topType) {
+    const topPct = (topType[1] / totalValue * 100).toFixed(1);
+    lines.push(`Asset class principale: <strong>${TYPE_LABELS[topType[0]] || topType[0]}</strong> (${topPct}% del portafoglio).`);
+  }
+
+  // Issuer concentration
+  const issuerMap = {};
+  holdings.forEach(h => { issuerMap[h.issuer || 'Altro'] = (issuerMap[h.issuer || 'Altro'] || 0) + (h.marketValue || 0); });
+  const topIssuer = Object.entries(issuerMap).sort((a, b) => b[1] - a[1])[0];
+  if (topIssuer) {
+    const iPct = (topIssuer[1] / totalValue * 100).toFixed(1);
+    lines.push(`Emittente principale: <strong>${topIssuer[0]}</strong> con ${iPct}% dell'esposizione totale.`);
+  }
+
+  // Fixed income weight
+  const fixedTypes = ['btp', 'deposit'];
+  const fixedValue = holdings.filter(h => fixedTypes.includes(h.type)).reduce((s, h) => s + (h.marketValue || 0), 0);
+  const fixedPct = totalValue > 0 ? (fixedValue / totalValue * 100).toFixed(1) : 0;
+  lines.push(`Componente a reddito fisso (BTP + depositi): <strong>${fixedPct}%</strong> del portafoglio.`);
+
+  el.innerHTML = `
+    <h3>Report ${today}</h3>
+    <ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul>
+  `;
 }
 
 // Type labels in Italian
