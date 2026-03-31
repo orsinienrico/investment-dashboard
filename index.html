@@ -202,17 +202,9 @@ body {
 /* Donut Chart */
 .donut-wrapper {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   flex-wrap: nowrap;
-}
-
-.donut-left {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
 }
 
 .donut-svg {
@@ -484,9 +476,12 @@ td.right { text-align: right; }
   .charts-grid { gap: 8px; margin-bottom: 10px; }
   .chart-card { padding: 10px 12px; border-radius: 8px; }
   .chart-card h3 { font-size: 0.6rem; margin-bottom: 8px; padding-bottom: 4px; }
-  .donut-svg { width: 70px; height: 70px; }
+  .alloc-header { flex-wrap: wrap; gap: 4px; }
+  .alloc-header h3 { font-size: 0.6rem; }
+  .risk-tag { font-size: 0.5rem; }
+  .donut-svg { width: 65px; height: 65px; }
   .donut-legend { grid-template-columns: 1fr 1fr; gap: 1px 6px; }
-  .legend-item { font-size: 0.55rem; }
+  .legend-item { font-size: 0.52rem; }
 
   /* Movers */
   .mover-row { gap: 4px; padding: 4px 0; }
@@ -550,11 +545,16 @@ td.right { text-align: right; }
   animation: fadeIn 0.3s ease-in;
 }
 
-/* Risk profile stacked bar */
+/* Allocation header with inline risk tags */
+.alloc-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.alloc-header h3 { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; margin: 0; padding: 0; border: 0; }
+.risk-inline { display: flex; gap: 6px; }
+.risk-tag { font-size: 0.55rem; font-weight: 600; white-space: nowrap; }
+
+/* Risk profile stacked bar (currency split) */
 .risk-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; }
 .risk-bar-segment { height: 100%; }
-.risk-labels { display: flex; flex-direction: column; gap: 0; margin-top: 3px; font-size: 0.5rem; color: var(--text-secondary); }
-.risk-labels span { white-space: nowrap; }
+.risk-labels { display: flex; justify-content: space-between; margin-top: 3px; font-size: 0.55rem; color: var(--text-secondary); }
 
 /* Top movers */
 .movers-section { margin-bottom: 6px; }
@@ -1476,13 +1476,17 @@ function renderCharts(holdings, totalValue) {
   const donut = renderDonut(allocationByType, 8);
   grid.innerHTML = `
     <div class="chart-card fade-in">
-      <h3>Allocazione & Profilo di Rischio</h3>
+      <div class="alloc-header">
+        <h3>Allocazione</h3>
+        <div class="risk-inline">
+          <span class="risk-tag" style="color:var(--cyan);">Difensivo ${defPct.toFixed(0)}%</span>
+          <span class="risk-tag" style="color:var(--accent);">Bilanciato ${balPct.toFixed(0)}%</span>
+          <span class="risk-tag" style="color:var(--orange);">Crescita ${groPct.toFixed(0)}%</span>
+        </div>
+      </div>
       <div class="chart-container">
         <div class="donut-wrapper">
-          <div class="donut-left">
-            ${donut.svg}
-            ${riskBar}
-          </div>
+          ${donut.svg}
           ${donut.legend}
         </div>
       </div>
