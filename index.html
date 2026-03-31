@@ -155,13 +155,10 @@ body {
 
 /* Charts Section */
 .charts-grid {
-  columns: 2;
-  column-gap: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
   margin-bottom: 16px;
-}
-.charts-grid > .chart-card {
-  break-inside: avoid;
-  margin-bottom: 12px;
 }
 
 .chart-card table td {
@@ -180,6 +177,11 @@ body {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+}
+.chart-card .chart-container {
+  flex: 1;
 }
 
 .chart-card h3 {
@@ -438,7 +440,7 @@ td.right { text-align: right; }
 
 /* Responsive — Tablet */
 @media (max-width: 700px) {
-  .charts-grid { columns: 1; }
+  .charts-grid { grid-template-columns: 1fr; }
   .chart-card { padding: 12px 14px; }
   .desc-grid { grid-template-columns: 1fr; }
 }
@@ -1483,13 +1485,13 @@ function renderCharts(holdings, totalValue) {
         </div>
       </div>
     </div>
-    <div class="chart-card chart-card--movers fade-in">
-      <h3>Top Movers Oggi</h3>
-      <div class="chart-container">${moversHtml}</div>
-    </div>
     <div class="chart-card fade-in">
       <h3>Concentrazione & Valuta</h3>
       <div class="chart-container">${concHtml}${currHtml}</div>
+    </div>
+    <div class="chart-card chart-card--movers fade-in">
+      <h3>Top Movers Oggi</h3>
+      <div class="chart-container">${moversHtml}</div>
     </div>
     <div class="chart-card fade-in">
       <h3>Scadenze Reddito Fisso</h3>
