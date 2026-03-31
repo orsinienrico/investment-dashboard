@@ -232,34 +232,34 @@ body {
 .donut-wrapper {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 10px;
+  flex-wrap: nowrap;
   justify-content: center;
 }
 
 .donut-svg {
-  width: 120px;
-  height: 120px;
+  width: 90px;
+  height: 90px;
   flex-shrink: 0;
 }
 
 .donut-legend {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  min-width: 100px;
+  gap: 2px;
+  min-width: 80px;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.65rem;
+  gap: 4px;
+  font-size: 0.6rem;
 }
 
 .legend-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 2px;
   flex-shrink: 0;
 }
@@ -279,21 +279,25 @@ body {
 .perf-bars {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
 .perf-bar-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  height: 18px;
 }
 
 .perf-bar-label {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   color: var(--text-secondary);
-  width: 55px;
+  width: 70px;
   text-align: right;
   flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .perf-bar-track {
@@ -313,11 +317,12 @@ body {
 }
 
 .perf-bar-value {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 500;
-  width: 55px;
+  width: 50px;
   text-align: right;
   flex-shrink: 0;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
@@ -538,7 +543,7 @@ td.right { text-align: right; }
   td { padding: 5px 6px; font-size: 0.7rem; }
   thead th { padding: 6px 6px; font-size: 0.6rem; }
   td.name-cell { max-width: 100px; }
-  .donut-svg { width: 100px; height: 100px; }
+  .donut-svg { width: 80px; height: 80px; }
 }
 
 @media (max-width: 400px) {
@@ -1187,9 +1192,9 @@ function renderDonut(data, maxSlices = 10) {
     slices.push({ label: 'Other', value: otherValue, pct: otherPct });
   }
 
-  const size = 120;
+  const size = 90;
   const cx = size / 2, cy = size / 2;
-  const outerR = 54, innerR = 34;
+  const outerR = 40, innerR = 25;
   let cumAngle = -90;
   let paths = '';
 
@@ -1235,8 +1240,8 @@ function renderDonut(data, maxSlices = 10) {
     <div class="donut-wrapper">
       <svg class="donut-svg" viewBox="0 0 ${size} ${size}">
         ${paths}
-        <text x="${cx}" y="${cy - 3}" text-anchor="middle" fill="var(--text-primary)" font-size="12" font-weight="700">${slices.length}</text>
-        <text x="${cx}" y="${cy + 9}" text-anchor="middle" fill="var(--text-secondary)" font-size="7">assets</text>
+        <text x="${cx}" y="${cy - 1}" text-anchor="middle" fill="var(--text-primary)" font-size="10" font-weight="700">${slices.length}</text>
+        <text x="${cx}" y="${cy + 8}" text-anchor="middle" fill="var(--text-secondary)" font-size="6">assets</text>
       </svg>
       <div class="donut-legend">${legend}</div>
     </div>
