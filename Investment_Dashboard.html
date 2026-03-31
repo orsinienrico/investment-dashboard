@@ -155,14 +155,10 @@ body {
 
 /* Charts Section */
 .charts-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin-bottom: 16px;
-}
-.charts-grid > .chart-card {
-  flex: 1 1 calc(50% - 6px);
-  min-width: 280px;
 }
 
 .chart-card table td {
@@ -181,6 +177,12 @@ body {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-container {
+  flex: 1;
 }
 
 .chart-card h3 {
@@ -194,12 +196,13 @@ body {
   font-weight: 600;
 }
 
-.chart-container {
-  position: relative;
-  width: 100%;
+/* Donut Chart — allocation panel centers vertically in available space */
+.chart-card:first-child .chart-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-/* Donut Chart */
 .donut-wrapper {
   display: flex;
   align-items: center;
@@ -445,7 +448,7 @@ td.right { text-align: right; }
 
 /* Responsive — Tablet */
 @media (max-width: 700px) {
-  .charts-grid > .chart-card { flex: 1 1 100%; min-width: 0; }
+  .charts-grid { grid-template-columns: 1fr; }
   .chart-card--movers { order: -1; }
   .chart-card { padding: 12px 14px; }
   .desc-grid { grid-template-columns: 1fr; }
