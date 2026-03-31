@@ -481,9 +481,9 @@ td.right { text-align: right; }
 /* Status messages */
 .status-bar {
   text-align: center;
-  padding: 20px;
+  padding: 10px;
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.75rem;
 }
 
 .status-bar.error {
@@ -492,6 +492,21 @@ td.right { text-align: right; }
   border-radius: 8px;
   border: 1px solid var(--red);
 }
+
+.error-badge {
+  color: var(--red);
+  cursor: help;
+  border-bottom: 1px dashed var(--red);
+}
+
+.cell-loading {
+  display: inline-block;
+  font-size: 0.6rem;
+  color: var(--yellow);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
 
 .loading-skeleton {
   background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
@@ -894,7 +909,7 @@ async function loadPortfolio() {
   renderDashboard();
 
   let liveCount = 0;
-  let errorCount = 0;
+  const errors = [];
 
   // ── STEP 1: Fetch ALL stock prices in ONE proxy call ──
   const stockTickers = PORTFOLIO.filter(h => h.ticker).map(h => h.ticker);
@@ -905,7 +920,7 @@ async function loadPortfolio() {
       PORTFOLIO.forEach((h, i) => {
         if (!h.ticker) return;
         const sp = stockPrices.get(h.ticker);
-        if (!sp || sp.price == null) { errorCount++; return; }
+        if (!sp || sp.price == null) { errors.push({ name: h.name, reason: 'Prezzo non trovato' }); return; }
         const cost = holdingTotalCost(h);
         const mv = sp.price * (h.shares || 0);
         portfolioData[i] = {
@@ -927,7 +942,7 @@ async function loadPortfolio() {
       renderDashboard();
     } catch (e) {
       console.error('Failed to load stock prices:', e);
-      errorCount += stockTickers.length;
+      stockTickers.forEach(t => errors.push({ name: t, reason: 'Proxy fallito' }));
     }
   }
 
@@ -960,7 +975,7 @@ async function loadPortfolio() {
   // Apply NAVs to all fund holdings
   for (const { h, i } of teleborsaHoldings) {
     const cached = navCache[h.teleborsa];
-    if (cached == null || cached.nav == null) { errorCount++; continue; }
+    if (cached == null || cached.nav == null) { errors.push({ name: h.name, reason: 'NAV non disponibile' }); continue; }
     const cost = holdingTotalCost(h);
     const mv = cached.nav * (h.shares || 0);
     portfolioData[i] = {
@@ -986,14 +1001,17 @@ async function loadPortfolio() {
   btn.disabled = false;
 
   const staticCount = PORTFOLIO.filter(h => !h.ticker && !h.teleborsa).length;
-  if (liveCount === 0 && errorCount > 0) {
-    status.textContent = `Quotazioni non disponibili. ${staticCount} posizioni a costo.`;
+  const errorTooltip = errors.length > 0
+    ? errors.map(e => `${e.name}: ${e.reason}`).join('\n')
+    : '';
+  if (liveCount === 0 && errors.length > 0) {
+    status.innerHTML = `Quotazioni non disponibili. ${staticCount} posizioni a costo. <span class="error-badge" title="${errorTooltip}">${errors.length} errori &#9432;</span>`;
     status.className = 'status-bar error';
-  } else if (errorCount > 0) {
-    status.textContent = `${liveCount} quotazioni live, ${errorCount} errori. ${staticCount} a costo.`;
+  } else if (errors.length > 0) {
+    status.innerHTML = `${liveCount} quotazioni live. ${staticCount} a costo. <span class="error-badge" title="${errorTooltip}">${errors.length} errori &#9432;</span>`;
     status.className = 'status-bar';
   } else {
-    status.textContent = `${liveCount} quotazioni live. ${staticCount} posizioni a costo/nominale.`;
+    status.innerHTML = `${liveCount} quotazioni live. ${staticCount} posizioni a costo/nominale.`;
     status.className = 'status-bar';
   }
 
@@ -1019,7 +1037,7 @@ function renderDashboard() {
 
   renderSummary(totalValue, totalCost, dayGain, dayGainPct, all.length, typeCount);
   renderCharts(all, totalValue);
-  renderHoldings(all, totalValue);
+  renderHoldings(portfolioData, totalValue);
 }
 
 // Type labels in Italian
@@ -1317,6 +1335,8 @@ function renderHoldings(holdings, totalValue) {
   });
 
   tbody.innerHTML = sorted.map(h => {
+    const pending = !h.loaded && (h.ticker || h.teleborsa);
+    const ld = '<span class="cell-loading">caricamento...</span>';
     const mv = h.marketValue || 0;
     const weight = totalValue > 0 ? (mv / totalValue) * 100 : 0;
     const sparkColor = (h.dayChange || 0) >= 0 ? 'var(--green)' : 'var(--red)';
@@ -1324,7 +1344,7 @@ function renderHoldings(holdings, totalValue) {
     const typeLabel = TYPE_LABELS[h.type] || h.type;
     const sharesStr = h.shares != null ? h.shares.toLocaleString('it-IT') : '—';
     const investedStr = h.totalCost != null ? fmtCurrency(h.totalCost) : '—';
-    const staticTag = h.live ? '' : h.isNominal
+    const staticTag = h.live ? '' : pending ? '' : h.isNominal
       ? ' <span class="type-tag" style="background:#555c6622;color:#555c66;">nominale</span>'
       : ' <span class="type-tag" style="background:#555c6622;color:#555c66;">costo</span>';
 
@@ -1336,14 +1356,14 @@ function renderHoldings(holdings, totalValue) {
         <td><span class="type-tag ${typeClass}">${typeLabel}</span></td>
         <td class="right">${sharesStr}</td>
         <td class="right">${investedStr}</td>
-        <td class="right">${h.currentPrice != null ? fmtCurrency(h.currentPrice) : '—'}</td>
-        <td style="font-size:0.65rem;color:var(--text-muted);">${h.priceDate || '—'}</td>
-        <td class="right ${gainClass(h.dayChangePct)}">${h.dayChangePct != null ? fmtPct(h.dayChangePct) : '—'}</td>
-        <td>${renderSparkline(h.sparkline, sparkColor)}</td>
-        <td class="right">${mv > 0 ? fmtCurrency(mv) : '—'}${staticTag}</td>
+        <td class="right">${pending ? ld : (h.currentPrice != null ? fmtCurrency(h.currentPrice) : '—')}</td>
+        <td style="font-size:0.65rem;color:var(--text-muted);">${pending ? '' : (h.priceDate || '—')}</td>
+        <td class="right ${gainClass(h.dayChangePct)}">${pending ? '' : (h.dayChangePct != null ? fmtPct(h.dayChangePct) : '—')}</td>
+        <td>${pending ? '' : renderSparkline(h.sparkline, sparkColor)}</td>
+        <td class="right">${pending ? ld : (mv > 0 ? fmtCurrency(mv) : '—')}${staticTag}</td>
         <td class="right ${gainClass(h.gainLoss)}">
-          ${h.gainLoss != null ? `${h.gainLoss >= 0 ? '+' : ''}${fmtCurrency(h.gainLoss)}` : '—'}
-          ${h.gainLossPct != null ? `<br><small>${fmtPct(h.gainLossPct)}</small>` : ''}
+          ${pending ? '' : (h.gainLoss != null ? `${h.gainLoss >= 0 ? '+' : ''}${fmtCurrency(h.gainLoss)}` : '—')}
+          ${pending ? '' : (h.gainLossPct != null ? `<br><small>${fmtPct(h.gainLossPct)}</small>` : '')}
         </td>
         <td class="right">
           <div class="weight-bar-container">
