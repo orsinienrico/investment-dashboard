@@ -155,10 +155,13 @@ body {
 
 /* Charts Section */
 .charts-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  columns: 2;
+  column-gap: 12px;
   margin-bottom: 16px;
+}
+.charts-grid > .chart-card {
+  break-inside: avoid;
+  margin-bottom: 12px;
 }
 
 .chart-card table td {
@@ -177,11 +180,6 @@ body {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-}
-.chart-card .chart-container {
-  flex: 1;
 }
 
 .chart-card h3 {
@@ -426,6 +424,11 @@ td.right { text-align: right; }
 
 @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
 
+.shimmer-text {
+  color: var(--text-muted);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
 .loading-skeleton {
   background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
   background-size: 200% 100%;
@@ -508,7 +511,7 @@ td.right { text-align: right; }
 
 /* Responsive — Tablet */
 @media (max-width: 700px) {
-  .charts-grid { grid-template-columns: 1fr; }
+  .charts-grid { columns: 1; }
   .chart-card { padding: 12px 14px; }
   .desc-grid { grid-template-columns: 1fr; }
 }
@@ -1327,6 +1330,20 @@ function renderDashboard() {
 function renderExecSummary(holdings, totalValue, totalCost, dayGain, dayGainPct) {
   const el = document.getElementById('execSummary');
   const today = new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  // Show skeleton while loading
+  if (isLoading) {
+    el.innerHTML = `
+      <div class="hero-date">Report ${today}</div>
+      <div class="hero-top">
+        <span class="hero-value" style="display:inline-block;"><span class="shimmer-text">Caricamento...</span></span>
+      </div>
+      <div class="hero-metrics">
+        <div class="hero-chip"><span class="shimmer-text">Prezzi in aggiornamento</span></div>
+      </div>
+    `;
+    return;
+  }
   const liveH = holdings.filter(h => h.live);
   const estH = holdings.filter(h => h.estimated);
   const totalPL = totalValue - totalCost;
@@ -1540,13 +1557,13 @@ function renderCharts(holdings, totalValue) {
         </div>
       </div>
     </div>
-    <div class="chart-card fade-in">
-      <h3>Concentrazione & Valuta</h3>
-      <div class="chart-container">${concHtml}${currHtml}</div>
-    </div>
     <div class="chart-card chart-card--movers fade-in">
       <h3>Top Movers Oggi</h3>
       <div class="chart-container">${moversHtml}</div>
+    </div>
+    <div class="chart-card fade-in">
+      <h3>Concentrazione & Valuta</h3>
+      <div class="chart-container">${concHtml}${currHtml}</div>
     </div>
     <div class="chart-card fade-in">
       <h3>Scadenze Reddito Fisso</h3>
