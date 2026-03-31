@@ -193,7 +193,7 @@ body {
 /* Charts Section */
 .charts-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -238,8 +238,8 @@ body {
 }
 
 .donut-svg {
-  width: 90px;
-  height: 90px;
+  width: 110px;
+  height: 110px;
   flex-shrink: 0;
 }
 
@@ -276,55 +276,6 @@ body {
 }
 
 /* Performance bar chart */
-.perf-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.perf-bar-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  height: 18px;
-}
-
-.perf-bar-label {
-  font-size: 0.6rem;
-  color: var(--text-secondary);
-  width: 70px;
-  text-align: right;
-  flex-shrink: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.perf-bar-track {
-  flex: 1;
-  height: 14px;
-  background: var(--bg-secondary);
-  border-radius: 3px;
-  position: relative;
-  overflow: hidden;
-}
-
-.perf-bar-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.5s ease;
-  min-width: 2px;
-}
-
-.perf-bar-value {
-  font-size: 0.6rem;
-  font-weight: 500;
-  width: 50px;
-  text-align: right;
-  flex-shrink: 0;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
 
 /* Holdings Table */
 .holdings-section {
@@ -527,12 +478,9 @@ td.right { text-align: right; }
 }
 
 /* Responsive */
-@media (max-width: 1100px) {
-  .charts-grid { grid-template-columns: 1fr 1fr; }
-}
-
 @media (max-width: 700px) {
   .charts-grid { grid-template-columns: 1fr; }
+  .chart-card--movers { order: -1; }
 }
 
 @media (max-width: 600px) {
@@ -554,6 +502,44 @@ td.right { text-align: right; }
 .fade-in {
   animation: fadeIn 0.3s ease-in;
 }
+
+/* Risk profile stacked bar */
+.risk-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+.risk-bar-segment { height: 100%; }
+.risk-labels { display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.55rem; color: var(--text-secondary); }
+
+/* Top movers */
+.movers-section { margin-bottom: 4px; }
+.movers-section h4 { font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+.mover-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid var(--border); }
+.mover-row:last-child { border-bottom: none; }
+.mover-name { font-size: 0.65rem; color: var(--text-primary); width: 75px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mover-pct { font-size: 0.65rem; font-weight: 600; font-variant-numeric: tabular-nums; width: 55px; text-align: right; flex-shrink: 0; }
+.mover-euro { font-size: 0.6rem; color: var(--text-secondary); flex: 1; text-align: right; font-variant-numeric: tabular-nums; }
+.movers-divider { border-top: 1px solid var(--border); margin: 4px 0; }
+
+/* Concentration */
+.conc-row { display: flex; align-items: center; gap: 4px; height: 18px; }
+.conc-label { font-size: 0.6rem; color: var(--text-secondary); width: 80px; text-align: right; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conc-track { flex: 1; height: 10px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden; }
+.conc-fill { height: 100%; border-radius: 3px; }
+.conc-value { font-size: 0.6rem; font-weight: 500; width: 40px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.conc-warning { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--yellow); margin-left: 2px; vertical-align: middle; }
+
+/* Currency split */
+.currency-split { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.currency-split h4 { font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+
+/* Maturity table */
+.maturity-row { display: flex; align-items: center; gap: 4px; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 0.6rem; }
+.maturity-row:last-child { border-bottom: none; }
+.maturity-row.urgent .maturity-days { color: var(--red); }
+.maturity-row.next { background: var(--bg-hover); border-radius: 4px; padding: 4px 6px; }
+.maturity-name { flex: 1; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.maturity-date { width: 65px; color: var(--text-muted); flex-shrink: 0; text-align: right; }
+.maturity-days { width: 45px; text-align: right; font-weight: 600; flex-shrink: 0; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.maturity-amount { width: 55px; text-align: right; color: var(--text-primary); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.maturity-rate { width: 35px; text-align: right; color: var(--accent); flex-shrink: 0; font-size: 0.55rem; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
@@ -723,10 +709,10 @@ const PORTFOLIO = [
   { ticker: "DTE.DE",   name: "Deutsche Telekom AG",    type: "stock",  shares: 21,   avgCost: 30.20, totalCost: null, currency: "EUR", isin: "DE0005557508", issuer: "Deutsche Telekom",   date: null },
 
   // ── BTP (Italian government bonds — shown at nominal value) ──
-  { ticker: null, name: "BTP CUM 03/28 INFFOI",   type: "btp", shares: null, avgCost: null, totalCost: 10000, currency: "EUR", isin: "IT0005532715", isNominal: true, issuer: "MEF (Tesoro)", date: "2023-03-06" },
-  { ticker: null, name: "BTP VAL 6/27 S-U CUM",   type: "btp", shares: null, avgCost: null, totalCost: 20000, currency: "EUR", isin: "IT0005547390", isNominal: true, issuer: "MEF (Tesoro)", date: "2023-05-29" },
-  { ticker: null, name: "BTP Piu 25/02/33 CUM",   type: "btp", shares: null, avgCost: null, totalCost: 10000, currency: "EUR", isin: "IT0005634792", isNominal: true, issuer: "MEF (Tesoro)", date: "2025-02-21" },
-  { ticker: null, name: "BTP 04/06/32 FOICUM",    type: "btp", shares: null, avgCost: null, totalCost: 15000, currency: "EUR", isin: "IT0005648248", isNominal: true, issuer: "MEF (Tesoro)", date: "2025-06-04" },
+  { ticker: null, name: "BTP CUM 03/28 INFFOI",   type: "btp", shares: null, avgCost: null, totalCost: 10000, currency: "EUR", isin: "IT0005532715", isNominal: true, issuer: "MEF (Tesoro)", date: "2023-03-06", endDate: "2028-03-01" },
+  { ticker: null, name: "BTP VAL 6/27 S-U CUM",   type: "btp", shares: null, avgCost: null, totalCost: 20000, currency: "EUR", isin: "IT0005547390", isNominal: true, issuer: "MEF (Tesoro)", date: "2023-05-29", endDate: "2027-06-01" },
+  { ticker: null, name: "BTP Piu 25/02/33 CUM",   type: "btp", shares: null, avgCost: null, totalCost: 10000, currency: "EUR", isin: "IT0005634792", isNominal: true, issuer: "MEF (Tesoro)", date: "2025-02-21", endDate: "2033-02-25" },
+  { ticker: null, name: "BTP 04/06/32 FOICUM",    type: "btp", shares: null, avgCost: null, totalCost: 15000, currency: "EUR", isin: "IT0005648248", isNominal: true, issuer: "MEF (Tesoro)", date: "2025-06-04", endDate: "2032-06-04" },
 
   // ── FONDI INTERNI UnipolSai (NAV from Teleborsa) ──
   { ticker: null, name: "Comp.3 Azionario Glob. C",   type: "fund", shares: 1109.96,  avgCost: 13.514, totalCost: 15000,  currency: "EUR", isin: "COMP3C",   issuer: "UnipolSai", teleborsa: "unipol-comparto-3-classe-c-comp3c-RkMuQ09NUDND",                            date: "2016-07-04" },
@@ -1294,114 +1280,153 @@ function renderSummary(totalValue, totalCost, dayGain, dayGainPct, count, typeCo
       <div class="sub neutral">${count} posizioni</div>
     </div>
     <div class="summary-card fade-in">
+      <div class="label">P/L Complessivo</div>
+      <div class="value ${gainClass(totalValue - totalCost)}">${totalValue - totalCost >= 0 ? '+' : ''}${fmtCurrency(totalValue - totalCost)}${estNote}</div>
+      <div class="sub ${gainClass(totalValue - totalCost)}">${fmtPct(totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0)} sul capitale</div>
+    </div>
+    <div class="summary-card fade-in">
       <div class="label">Asset Mix</div>
-      <div class="value" style="font-size:1rem;">${Object.entries(typeCount).map(([t,c]) => `${c} ${TYPE_LABELS[t] || t}`).join(', ')}</div>
+      <div class="value" style="font-size:0.85rem;">${Object.entries(typeCount).map(([t,c]) => `${c} ${TYPE_LABELS[t] || t}`).join(', ')}</div>
     </div>
   `;
 }
 
 // Allocation grid (replaces donut)
-function renderAllocationGrid(holdings, totalValue) {
-  const sorted = [...holdings]
-    .filter(h => (h.marketValue || 0) > 0)
-    .sort((a, b) => (b.marketValue || 0) - (a.marketValue || 0));
-
-  const rows = sorted.map((h, i) => {
-    const mv = h.marketValue || 0;
-    const pct = totalValue > 0 ? (mv / totalValue) * 100 : 0;
-    const color = CHART_COLORS[i % CHART_COLORS.length];
-    const typeLabel = TYPE_LABELS[h.type] || h.type;
-    const label = h.isNominal ? 'nominale' : (h.live ? 'live' : 'costo');
-    const labelColor = h.live ? 'var(--green)' : 'var(--text-muted)';
-    return `
-      <tr>
-        <td>
-          <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${color};margin-right:8px;vertical-align:middle;"></span>
-          ${h.name}
-        </td>
-        <td><span class="type-tag type-${h.type}">${typeLabel}</span></td>
-        <td class="right">${fmtCurrency(h.totalCost || 0)}</td>
-        <td class="right">${fmtCurrency(mv)} <span style="color:${labelColor};font-size:0.65rem;">${label}</span></td>
-        <td class="right" style="width:130px;">
-          <div class="weight-bar-container">
-            <span>${pct.toFixed(1)}%</span>
-            <div class="weight-bar" style="width:70px;"><div class="weight-bar-fill" style="width:${pct}%;background:${color};"></div></div>
-          </div>
-        </td>
-      </tr>`;
-  }).join('');
-
-  return `
-    <table style="width:100%;border-collapse:collapse;">
-      <thead>
-        <tr>
-          <th style="text-align:left;padding:8px 12px;font-size:0.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">Strumento</th>
-          <th style="text-align:left;padding:8px 12px;font-size:0.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">Tipo</th>
-          <th style="text-align:right;padding:8px 12px;font-size:0.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">Investito</th>
-          <th style="text-align:right;padding:8px 12px;font-size:0.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">Controvalore</th>
-          <th style="text-align:right;padding:8px 12px;font-size:0.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">Peso</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>`;
-}
-
-// Charts
+// Charts — 4-panel 2x2 grid
 function renderCharts(holdings, totalValue) {
   const grid = document.getElementById('chartsGrid');
 
-  // Allocation by type (for donut)
+  // ── Panel 1: Allocation donut + Risk profile ──
   const typeMap = {};
-  holdings.forEach(h => {
-    typeMap[h.type] = (typeMap[h.type] || 0) + (h.marketValue || 0);
-  });
+  holdings.forEach(h => { typeMap[h.type] = (typeMap[h.type] || 0) + (h.marketValue || 0); });
   const allocationByType = Object.entries(typeMap)
-    .filter(([, value]) => value > 0)
+    .filter(([, v]) => v > 0)
     .map(([label, value]) => ({ label: TYPE_LABELS[label] || label, value, pct: (value / totalValue) * 100 }))
     .sort((a, b) => b.value - a.value);
 
-  // Performance bars (only for positions with P/L)
-  const perfData = holdings
-    .filter(h => h.gainLossPct != null)
-    .sort((a, b) => b.gainLossPct - a.gainLossPct);
+  const defensive = ['btp', 'deposit', 'policy'];
+  const balanced = ['fund'];
+  const defVal = holdings.filter(h => defensive.includes(h.type)).reduce((s, h) => s + (h.marketValue || 0), 0);
+  const balVal = holdings.filter(h => balanced.includes(h.type)).reduce((s, h) => s + (h.marketValue || 0), 0);
+  const groVal = totalValue - defVal - balVal;
+  const defPct = totalValue > 0 ? (defVal / totalValue * 100) : 0;
+  const balPct = totalValue > 0 ? (balVal / totalValue * 100) : 0;
+  const groPct = totalValue > 0 ? (groVal / totalValue * 100) : 0;
 
-  // Performance by issuer (aggregate cost & value per issuer, then compute P/L %)
-  const issuerMap = {};
-  holdings.forEach(h => {
-    const iss = h.issuer || 'Altro';
-    if (!issuerMap[iss]) issuerMap[iss] = { cost: 0, value: 0 };
-    issuerMap[iss].cost += (h.totalCost || 0);
-    issuerMap[iss].value += (h.marketValue || 0);
-  });
-  const issuerPerf = Object.entries(issuerMap)
-    .filter(([, d]) => d.cost > 0 && d.value > 0)
-    .map(([name, d]) => ({
-      name,
-      ticker: null,
-      gainLossPct: ((d.value - d.cost) / d.cost) * 100,
-      gainLoss: d.value - d.cost,
-      issuerLabel: name
-    }))
-    .sort((a, b) => b.gainLossPct - a.gainLossPct);
+  const riskBar = `
+    <div class="risk-bar">
+      <div class="risk-bar-segment" style="width:${defPct}%;background:var(--cyan);"></div>
+      <div class="risk-bar-segment" style="width:${balPct}%;background:var(--accent);"></div>
+      <div class="risk-bar-segment" style="width:${groPct}%;background:var(--orange);"></div>
+    </div>
+    <div class="risk-labels">
+      <span>Difensivo ${defPct.toFixed(0)}%</span>
+      <span>Bilanciato ${balPct.toFixed(0)}%</span>
+      <span>Crescita ${groPct.toFixed(0)}%</span>
+    </div>`;
 
+  // ── Panel 2: Top Movers Today ──
+  const liveH = holdings.filter(h => h.dayChangePct != null);
+  const sorted = [...liveH].sort((a, b) => b.dayChangePct - a.dayChangePct);
+  const gainers = sorted.filter(h => h.dayChangePct > 0).slice(0, 3);
+  const losers = sorted.filter(h => h.dayChangePct < 0).slice(-3).reverse().sort((a, b) => a.dayChangePct - b.dayChangePct);
+
+  function moverRow(h) {
+    const dayEur = (h.dayChange || 0) * (h.shares || 0);
+    return `<div class="mover-row">
+      <span class="mover-name">${h.ticker || h.name.substring(0, 12)}</span>
+      <span class="mover-pct ${gainClass(h.dayChangePct)}">${fmtPct(h.dayChangePct)}</span>
+      <span class="mover-euro ${gainClass(dayEur)}">${dayEur >= 0 ? '+' : ''}${fmtCurrency(dayEur)}</span>
+    </div>`;
+  }
+
+  const moversHtml = liveH.length > 0 ? `
+    <div class="movers-section"><h4>Rialzo</h4>${gainers.length > 0 ? gainers.map(moverRow).join('') : '<div style="font-size:0.6rem;color:var(--text-muted);">—</div>'}</div>
+    <div class="movers-divider"></div>
+    <div class="movers-section"><h4>Ribasso</h4>${losers.length > 0 ? losers.map(moverRow).join('') : '<div style="font-size:0.6rem;color:var(--text-muted);">—</div>'}</div>
+  ` : '<div style="color:var(--text-muted);text-align:center;padding:10px;font-size:0.65rem;">Nessun dato intraday</div>';
+
+  // ── Panel 3: Concentration & Currency ──
+  const issuerW = {};
+  holdings.forEach(h => { issuerW[h.issuer || 'Altro'] = (issuerW[h.issuer || 'Altro'] || 0) + (h.marketValue || 0); });
+  const topIssuers = Object.entries(issuerW).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const maxIssuerPct = topIssuers.length > 0 ? (topIssuers[0][1] / totalValue * 100) : 0;
+
+  const concHtml = topIssuers.map(([name, val]) => {
+    const pct = totalValue > 0 ? (val / totalValue * 100) : 0;
+    const warn = pct > 30 ? '<span class="conc-warning" title="Concentrazione >30%"></span>' : '';
+    return `<div class="conc-row">
+      <span class="conc-label" title="${name}">${name}</span>
+      <div class="conc-track"><div class="conc-fill" style="width:${pct / maxIssuerPct * 100}%;background:var(--accent);"></div></div>
+      <span class="conc-value">${pct.toFixed(1)}%${warn}</span>
+    </div>`;
+  }).join('');
+
+  const currMap = {};
+  holdings.forEach(h => { currMap[h.currency || 'EUR'] = (currMap[h.currency || 'EUR'] || 0) + (h.marketValue || 0); });
+  const eurVal = currMap['EUR'] || 0;
+  const usdVal = currMap['USD'] || 0;
+  const eurPct = totalValue > 0 ? (eurVal / totalValue * 100) : 100;
+  const usdPct = totalValue > 0 ? (usdVal / totalValue * 100) : 0;
+
+  const currHtml = `<div class="currency-split">
+    <h4>Esposizione Valutaria</h4>
+    <div class="risk-bar">
+      <div class="risk-bar-segment" style="width:${eurPct}%;background:var(--accent);"></div>
+      <div class="risk-bar-segment" style="width:${usdPct}%;background:var(--orange);"></div>
+    </div>
+    <div class="risk-labels">
+      <span>EUR ${fmtCurrency(eurVal)} (${eurPct.toFixed(1)}%)</span>
+      ${usdPct > 0 ? `<span>USD ${fmtCurrency(usdVal)} (${usdPct.toFixed(1)}%)</span>` : ''}
+    </div>
+  </div>`;
+
+  // ── Panel 4: Maturities ──
+  const maturities = holdings
+    .filter(h => (h.type === 'btp' || h.type === 'deposit') && h.endDate)
+    .map(h => {
+      const end = new Date(h.endDate);
+      const days = Math.ceil((end - new Date()) / (1000 * 60 * 60 * 24));
+      let rate = '';
+      if (h.note) { const m = h.note.match(/[\d,.]+%/); if (m) rate = m[0]; }
+      return { ...h, endDateObj: end, daysLeft: days, rate };
+    })
+    .sort((a, b) => a.endDateObj - b.endDateObj);
+
+  const nearestIdx = maturities.findIndex(m => m.daysLeft > 0);
+  const matHtml = maturities.length > 0 ? maturities.map((m, i) => {
+    const cls = m.daysLeft <= 30 && m.daysLeft > 0 ? 'urgent' : (i === nearestIdx ? 'next' : '');
+    const dateStr = m.endDateObj.toLocaleDateString('it-IT', { month: 'short', year: 'numeric' });
+    const shortName = m.name.length > 20 ? m.name.substring(0, 18) + '...' : m.name;
+    return `<div class="maturity-row ${cls}" title="${m.name}">
+      <span class="maturity-name">${shortName}</span>
+      <span class="maturity-date">${dateStr}</span>
+      <span class="maturity-days">${m.daysLeft > 0 ? m.daysLeft + 'gg' : 'scaduto'}</span>
+      <span class="maturity-amount">${fmtCurrency(m.totalCost)}</span>
+      <span class="maturity-rate">${m.rate || '—'}</span>
+    </div>`;
+  }).join('') : '<div style="color:var(--text-muted);font-size:0.65rem;">Nessuna scadenza</div>';
+
+  // ── Render 4 panels ──
   grid.innerHTML = `
     <div class="chart-card fade-in">
-      <h3>Allocazione per Tipo</h3>
+      <h3>Allocazione & Profilo di Rischio</h3>
       <div class="chart-container">
-        ${renderDonut(allocationByType, 6)}
+        ${renderDonut(allocationByType, 8)}
+        ${riskBar}
       </div>
     </div>
-    <div class="chart-card fade-in">
-      <h3>Performance per Strumento</h3>
-      <div class="chart-container">
-        ${perfData.length > 0 ? renderPerfBars(perfData) : '<div style="color:var(--text-muted);text-align:center;padding:10px;">Nessun dato P/L</div>'}
-      </div>
+    <div class="chart-card chart-card--movers fade-in">
+      <h3>Top Movers Oggi</h3>
+      <div class="chart-container">${moversHtml}</div>
     </div>
     <div class="chart-card fade-in">
-      <h3>Performance per Emittente</h3>
-      <div class="chart-container">
-        ${issuerPerf.length > 0 ? renderPerfBars(issuerPerf.map(d => ({ ...d, ticker: d.issuerLabel }))) : '<div style="color:var(--text-muted);text-align:center;padding:10px;">Nessun dato P/L</div>'}
-      </div>
+      <h3>Concentrazione & Valuta</h3>
+      <div class="chart-container">${concHtml}${currHtml}</div>
+    </div>
+    <div class="chart-card fade-in">
+      <h3>Scadenze Reddito Fisso</h3>
+      <div class="chart-container">${matHtml}</div>
     </div>
   `;
 }
@@ -1471,29 +1496,6 @@ function renderDonut(data, maxSlices = 10) {
       <div class="donut-legend">${legend}</div>
     </div>
   `;
-}
-
-// Performance bars
-function renderPerfBars(data) {
-  if (!data.length) return '<div class="status-bar">No data</div>';
-
-  const maxAbs = Math.max(...data.map(d => Math.abs(d.gainLossPct)), 1);
-
-  return `<div class="perf-bars">${data.map(d => {
-    const pct = d.gainLossPct;
-    const width = Math.max((Math.abs(pct) / maxAbs) * 100, 2);
-    const color = pct >= 0 ? 'var(--green)' : 'var(--red)';
-
-    return `
-      <div class="perf-bar-row">
-        <span class="perf-bar-label">${d.ticker || d.name.substring(0, 8)}</span>
-        <div class="perf-bar-track">
-          <div class="perf-bar-fill" style="width:${width}%;background:${color};"></div>
-        </div>
-        <span class="perf-bar-value ${gainClass(pct)}">${fmtPct(pct)}</span>
-      </div>
-    `;
-  }).join('')}</div>`;
 }
 
 // Sparkline SVG
