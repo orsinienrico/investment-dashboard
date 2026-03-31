@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portafoglio Investimenti</title>
+<style>
+/* ============================================================
+   PORTFOLIO CONFIGURATION — Edit this section to manage holdings
+   ============================================================ */
+
+:root {
+  /* Colors — muted, low-saturation palette */
+  --bg-primary: #0f1114;
+  --bg-secondary: #161a1e;
+  --bg-card: #1a1e24;
+  --bg-hover: #22272e;
+  --border: #2a2f38;
+  --text-primary: #c9cdd3;
+  --text-secondary: #7a818a;
+  --text-muted: #555c66;
+  --accent: #6b8fba;
+  --accent-dim: #6b8fba1a;
+  --green: #5a9a6b;
+  --green-dim: #5a9a6b1a;
+  --red: #b85c5c;
+  --red-dim: #b85c5c1a;
+  --yellow: #a18c52;
+  --purple: #8f7db8;
+  --orange: #b07e52;
+  --pink: #a8708f;
+  --cyan: #5a9490;
+
+  /* Chart colors — desaturated, softer tones */
+  --chart-1: #6b8fba;
+  --chart-2: #5a9a6b;
+  --chart-3: #b07e52;
+  --chart-4: #8f7db8;
+  --chart-5: #a8708f;
+  --chart-6: #5a9490;
+  --chart-7: #a18c52;
+  --chart-8: #b85c5c;
+  --chart-9: #7aa3c4;
+  --chart-10: #6bab7a;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Layout */
+.dashboard {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header h1 .icon {
+  font-size: 1.3rem;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.last-updated {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.btn {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.btn:hover {
+  background: var(--accent);
+  color: var(--bg-primary);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn.loading {
+  position: relative;
+  color: transparent;
+}
+
+.btn.loading::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  top: 50%;
+  left: 50%;
+  margin: -7px 0 0 -7px;
+  border: 2px solid transparent;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Summary Cards */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  transition: border-color 0.2s;
+}
+
+.summary-card:hover {
+  border-color: var(--text-muted);
+}
+
+.summary-card .label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.summary-card .value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.summary-card .sub {
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.positive { color: var(--green); }
+.negative { color: var(--red); }
+.neutral { color: var(--text-secondary); }
+
+/* Charts Section */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.chart-card table td {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-card table tr:last-child td { border-bottom: none; }
+.chart-card table tr:hover td { background: var(--bg-hover); }
+
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.chart-card h3 {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.chart-container {
+  position: relative;
+  width: 100%;
+}
+
+/* Donut Chart */
+.donut-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.donut-svg {
+  width: 180px;
+  height: 180px;
+  flex-shrink: 0;
+}
+
+.donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 120px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.legend-label {
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.legend-value {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Performance bar chart */
+.perf-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.perf-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.perf-bar-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  width: 60px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.perf-bar-track {
+  flex: 1;
+  height: 22px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.perf-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+  min-width: 2px;
+}
+
+.perf-bar-value {
+  font-size: 0.8rem;
+  font-weight: 500;
+  width: 65px;
+  text-align: right;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Holdings Table */
+.holdings-section {
+  margin-bottom: 20px;
+}
+
+.holdings-section h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.holdings-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-card);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+/* Allow Nome column to shrink/truncate */
+td.name-cell {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+thead th {
+  text-align: left;
+  padding: 8px 8px;
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  background: var(--bg-secondary);
+  position: sticky;
+  top: 0;
+}
+
+thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+thead th.sortable:hover {
+  color: var(--text-primary);
+}
+
+thead th.sortable .sort-icon::after {
+  content: '⇅';
+  margin-left: 4px;
+  opacity: 0.3;
+  font-size: 0.7rem;
+}
+
+thead th.sortable.sort-asc .sort-icon::after {
+  content: '▲';
+  opacity: 0.8;
+}
+
+thead th.sortable.sort-desc .sort-icon::after {
+  content: '▼';
+  opacity: 0.8;
+}
+
+thead th.right { text-align: right; }
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--bg-hover); }
+
+td {
+  padding: 7px 8px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+td.right { text-align: right; }
+
+.ticker-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ticker-badge {
+  font-weight: 600;
+  font-size: 0.7rem;
+  color: var(--text-primary);
+}
+
+.ticker-name {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.type-tag {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.type-stock { background: var(--accent-dim); color: var(--accent); }
+.type-etf { background: var(--green-dim); color: var(--green); }
+.type-etc { background: #b07e521a; color: var(--orange); }
+.type-crypto { background: #8f7db81a; color: var(--purple); }
+.type-bond { background: #a18c521a; color: var(--yellow); }
+.type-btp { background: #a18c521a; color: var(--yellow); }
+.type-fund { background: #5a94901a; color: var(--cyan); }
+.type-policy { background: #a8708f1a; color: var(--pink); }
+.type-deposit { background: #6b8fba1a; color: #7aa3c4; }
+
+.sparkline-svg {
+  width: 50px;
+  height: 22px;
+}
+
+.weight-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.weight-bar {
+  width: 40px;
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.weight-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* Status messages */
+.status-bar {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.status-bar.error {
+  color: var(--red);
+  background: var(--red-dim);
+  border-radius: 8px;
+  border: 1px solid var(--red);
+}
+
+.loading-skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+  height: 20px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .charts-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .dashboard { padding: 10px; }
+  .header h1 { font-size: 1.2rem; }
+  .summary-grid { grid-template-columns: 1fr 1fr; }
+  .summary-card .value { font-size: 1.2rem; }
+  td { padding: 5px 6px; font-size: 0.7rem; }
+  thead th { padding: 6px 6px; font-size: 0.6rem; }
+  td.name-cell { max-width: 100px; }
+  .donut-svg { width: 140px; height: 140px; }
+}
+
+@media (max-width: 400px) {
+  .summary-grid { grid-template-columns: 1fr; }
+}
+
+/* Fade in animation */
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<div class="dashboard" id="app">
+  <div class="header">
+    <h1><span class="icon">&#9670;</span> Portafoglio Investimenti</h1>
+    <div class="header-right">
+      <span class="last-updated" id="lastUpdated">Not yet loaded</span>
+      <button class="btn" id="refreshBtn" onclick="refreshAll()">Refresh</button>
+    </div>
+  </div>
+
+  <noscript><div style="color:#b85c5c;padding:20px;text-align:center;">JavaScript è disabilitato o non supportato. Apri questa pagina da un web server (es. GitHub Pages).</div></noscript>
+  <div id="statusBar" class="status-bar">Loading portfolio data...</div>
+
+  <div id="mainContent" style="display:none;">
+    <!-- Summary Cards -->
+    <div class="summary-grid" id="summaryGrid"></div>
+
+    <!-- Charts -->
+    <div class="charts-grid" id="chartsGrid"></div>
+
+    <!-- Holdings Table -->
+    <div class="holdings-section">
+      <h2>Posizioni</h2>
+      <div class="holdings-table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th class="sortable" data-sort="issuer">Emittente <span class="sort-icon"></span></th>
+              <th class="sortable" data-sort="code">Codice <span class="sort-icon"></span></th>
+              <th class="sortable" data-sort="name">Nome <span class="sort-icon"></span></th>
+              <th class="sortable" data-sort="type">Tipo <span class="sort-icon"></span></th>
+              <th class="right sortable" data-sort="shares">Quote <span class="sort-icon"></span></th>
+              <th class="right sortable" data-sort="invested">Investito <span class="sort-icon"></span></th>
+              <th class="right sortable" data-sort="price">Prezzo <span class="sort-icon"></span></th>
+              <th class="right sortable" data-sort="dayChange">Var. Giorno <span class="sort-icon"></span></th>
+              <th>Trend</th>
+              <th class="right sortable" data-sort="value">Controvalore <span class="sort-icon"></span></th>
+              <th class="right sortable" data-sort="pl">P/L <span class="sort-icon"></span></th>
+              <th class="right sortable" data-sort="weight">Peso <span class="sort-icon"></span></th>
+            </tr>
+          </thead>
+          <tbody id="holdingsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// PORTFOLIO CONFIGURATION
+// Edit this section to define your holdings.
+// ================================================================
+const PORTFOLIO = [
+  // ── STOCKS (live prices via Yahoo Finance) ──────────────────
+  { ticker: "ENEL.MI",  name: "Enel SpA",              type: "stock",  shares: 500,  avgCost: 8.55,  totalCost: null, currency: "EUR", isin: "IT0003128367", issuer: "Enel",              date: null },
+  { ticker: "DTE.DE",   name: "Deutsche Telekom AG",    type: "stock",  shares: 21,   avgCost: 30.20, totalCost: null, currency: "EUR", isin: "DE0005557508", issuer: "Deutsche Telekom",   date: null },
+
+  // ── BTP (Italian government bonds — shown at nominal value) ──
+  { ticker: null, name: "BTP CUM 03/28 INFFOI",   type: "btp", shares: null, avgCost: null, totalCost: 10000, currency: "EUR", isin: "IT0005532715", isNominal: true, issuer: "MEF (Tesoro)", date: "2023-03-06" },
+  { ticker: null, name: "BTP VAL 6/27 S-U CUM",   type: "btp", shares: null, avgCost: null, totalCost: 20000, currency: "EUR", isin: "IT0005547390", isNominal: true, issuer: "MEF (Tesoro)", date: "2023-05-29" },
+  { ticker: null, name: "BTP Piu 25/02/33 CUM",   type: "btp", shares: null, avgCost: null, totalCost: 10000, currency: "EUR", isin: "IT0005634792", isNominal: true, issuer: "MEF (Tesoro)", date: "2025-02-21" },
+  { ticker: null, name: "BTP 04/06/32 FOICUM",    type: "btp", shares: null, avgCost: null, totalCost: 15000, currency: "EUR", isin: "IT0005648248", isNominal: true, issuer: "MEF (Tesoro)", date: "2025-06-04" },
+
+  // ── FONDI INTERNI UnipolSai (NAV from Teleborsa) ──
+  { ticker: null, name: "Comp.3 Azionario Glob. C",   type: "fund", shares: 1109.96,  avgCost: 13.514, totalCost: 15000,  currency: "EUR", isin: "COMP3C",   issuer: "UnipolSai", teleborsa: "unipol-comparto-3-classe-c-comp3c-RkMuQ09NUDND",                            date: "2016-07-04" },
+  { ticker: null, name: "Comp.2 Bilanciato B",        type: "fund", shares: 1128.571, avgCost: 13.291, totalCost: 15000,  currency: "EUR", isin: "COMP2B",   issuer: "UnipolSai", teleborsa: "unipol-comparto-2-classe-b-comp2b-RkMuQ09NUDJC",                            date: "2017-07-12" },
+  { ticker: null, name: "Comp.3 Azion. Glob. PAC",    type: "fund", shares: 1008.257, avgCost: 20.431, totalCost: 20600,  currency: "EUR", isin: "COMP3C",   issuer: "UnipolSai", teleborsa: "unipol-comparto-3-classe-c-comp3c-RkMuQ09NUDND",                            date: "2017-07-12" },
+  { ticker: null, name: "Valore Prudente",             type: "fund", shares: 1603.935, avgCost: 9.975,  totalCost: 16000,  currency: "EUR", isin: "UNIVAPR",  issuer: "UnipolSai", teleborsa: "unipol-valore-prudente-unipol-univapr-RkMuVU5JVkFQUg",                      date: "2018-07-01" },
+  { ticker: null, name: "Valore Dinamico",             type: "fund", shares: 938.851,  avgCost: 10.651, totalCost: 10000,  currency: "EUR", isin: "UNIVADIN", issuer: "UnipolSai", teleborsa: "unipol-valore-dinamico-unipol-classe-a-univadi-RkMuVU5JVkFESQ",              date: "2018-07-01" },
+  { ticker: null, name: "Valore Equilibrato",          type: "fund", shares: 1364.279, avgCost: 10.262, totalCost: 14000,  currency: "EUR", isin: "UNIVEQ",   issuer: "UnipolSai", teleborsa: "unipol-valore-equilibrato-unipol-univeq-RkMuVU5JVkVR",                      date: "2018-07-01" },
+
+  // ── POLIZZE (insurance policies — shown at cost) ──
+  { ticker: null, name: "Investimento MultiGest",      type: "policy", shares: null, avgCost: null, totalCost: 26000, currency: "EUR", isin: "TU31004FV", issuer: "UnipolSai", date: "2025-09-16" },
+  { ticker: null, name: "Unipol Risparmio GestiMix",   type: "policy", shares: null, avgCost: null, totalCost: 2440,  currency: "EUR", isin: "U35014K",  issuer: "UnipolSai", date: "2025-09-16" },
+
+  // ── FINECO — ETC / ETF / US Stocks (live prices via Yahoo Finance) ──
+  { ticker: "SGLD.MI", name: "Invesco Physical Gold ETC",       type: "etc",   shares: 10,  avgCost: 410.97, totalCost: null, currency: "EUR", isin: "IE00B579F325", issuer: "Fineco", date: null },
+  { ticker: "CRUD.MI", name: "WisdomTree WTI Crude Oil",        type: "etc",   shares: 22,  avgCost: 10.43,  totalCost: null, currency: "USD", isin: "GB00B15KXV33", issuer: "Fineco", date: null },
+  { ticker: "SOUN",    name: "SoundHound AI",                   type: "stock", shares: 20,  avgCost: 11.35,  totalCost: null, currency: "USD", isin: "US8361001071", issuer: "Fineco", date: null },
+  { ticker: "QBTS",    name: "D-Wave Quantum",                  type: "stock", shares: 5,   avgCost: 29.15,  totalCost: null, currency: "USD", isin: "US26740W1099", issuer: "Fineco", date: null },
+  { ticker: "COPX.MI", name: "Global X Copper Miners ETF",      type: "etf",   shares: 43,  avgCost: 57.38,  totalCost: null, currency: "EUR", isin: "IE0003Z9E2Y3", issuer: "Fineco", date: null },
+
+  // ── TIME DEPOSITS ──
+  { ticker: null, name: "Time Deposit",                type: "deposit", shares: null, avgCost: null, totalCost: 12000, currency: "EUR", isin: null, issuer: "Illimity Bank", date: "2025-12-01", endDate: "2026-12-01", note: "2.3% lordo / 1.7% netto - NON svincolabile" },
+  { ticker: null, name: "Time Deposit",                type: "deposit", shares: null, avgCost: null, totalCost: 20000, currency: "EUR", isin: null, issuer: "CRV",           date: "2025-04-23", endDate: "2026-04-01", note: "3%" },
+  { ticker: null, name: "Time Deposit",                type: "deposit", shares: null, avgCost: null, totalCost: 15000, currency: "EUR", isin: null, issuer: "CRV",           date: "2026-01-21", endDate: "2027-01-01", note: "2.75%" },
+];
+
+// ================================================================
+// CORS PROXY CONFIGURATION
+// These are free, no-signup CORS proxies. If one goes down,
+// the system will automatically try the next one.
+// ================================================================
+// ================================================================
+// APPLICATION CODE — No need to edit below this line
+// ================================================================
+
+const CHART_COLORS = [
+  '#6b8fba', '#5a9a6b', '#b07e52', '#8f7db8', '#a8708f',
+  '#5a9490', '#a18c52', '#b85c5c', '#7aa3c4', '#6bab7a',
+  '#c49868', '#a594c9', '#c4889e', '#72a8a3', '#b8a66e'
+];
+
+let portfolioData = [];
+let isLoading = false;
+let sortColumn = 'weight';
+let sortDirection = 'desc';
+
+// Format currency
+function fmt(n, decimals = 2) {
+  if (n == null || isNaN(n)) return '—';
+  return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function fmtCurrency(n, symbol = '\u20AC') {
+  if (n == null || isNaN(n)) return '—';
+  if (Math.abs(n) >= 1e6) return symbol + (n / 1e6).toFixed(2) + 'M';
+  return symbol + fmt(n);
+}
+
+function fmtPct(n) {
+  if (n == null || isNaN(n)) return '—';
+  return (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+}
+
+function gainClass(n) {
+  if (n == null || isNaN(n)) return 'neutral';
+  return n >= 0 ? 'positive' : 'negative';
+}
+
+// Fetch with timeout
+function fetchWithTimeout(url, opts = {}, timeoutMs = 12000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
+// Proxy strategies — tries multiple proxies in order
+const PROXIES = [
+  {
+    name: 'allorigins/get',
+    fetch: async (url) => {
+      const resp = await fetchWithTimeout(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {}, 12000);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const w = await resp.json();
+      if (!w.contents) throw new Error('Empty');
+      return w.contents;
+    }
+  },
+  {
+    name: 'allorigins/raw',
+    fetch: async (url) => {
+      const resp = await fetchWithTimeout(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, {}, 12000);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      return await resp.text();
+    }
+  },
+  {
+    name: 'corsproxy.io',
+    fetch: async (url) => {
+      const resp = await fetchWithTimeout(`https://corsproxy.io/?url=${encodeURIComponent(url)}`, {}, 12000);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      return await resp.text();
+    }
+  },
+];
+
+// Proxy fetch with automatic fallback across proxy services
+async function proxyFetch(targetUrl) {
+  for (const proxy of PROXIES) {
+    try {
+      console.log(`[proxy] Trying ${proxy.name} for ${targetUrl.substring(0, 60)}...`);
+      const result = await proxy.fetch(targetUrl);
+      if (result && result.length > 10) {
+        console.log(`[proxy] ${proxy.name} succeeded`);
+        return result;
+      }
+    } catch (e) {
+      console.warn(`[proxy] ${proxy.name} failed:`, e.message);
+    }
+  }
+  throw new Error('All proxies failed for: ' + targetUrl.substring(0, 80));
+}
+
+// Retry wrapper with delay between attempts
+async function withRetry(fn, retries = 1, baseDelay = 2000) {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      console.warn(`Attempt ${i + 1} failed:`, e.message);
+      if (i < retries) await delay(baseDelay * (i + 1));
+      else throw e;
+    }
+  }
+}
+
+// ---------- DATA FETCHING ----------
+
+// Fetch ALL stock prices in ONE Yahoo request using ?comparisons=
+// Returns Map<ticker, {price, previousClose, closes[]}>
+async function fetchAllStockPrices(tickers) {
+  if (tickers.length === 0) return new Map();
+  const primary = tickers[0];
+  const comparisons = tickers.slice(1);
+  const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${primary}?range=1mo&interval=1d` +
+    (comparisons.length > 0 ? `&comparisons=${comparisons.join(',')}` : '');
+
+  console.log('[Stocks] Fetching all in one call:', tickers.join(', '));
+  const raw = await withRetry(() => proxyFetch(yahooUrl));
+  const data = JSON.parse(raw);
+  if (!data.chart || !data.chart.result) throw new Error('Invalid Yahoo response');
+
+  const result = new Map();
+  const r = data.chart.result[0];
+  const meta = r.meta;
+  const quotes = (r.indicators && r.indicators.quote && r.indicators.quote[0]) || {};
+  const closes = (quotes.close || []).filter(v => v != null);
+
+  result.set(primary, {
+    price: meta.regularMarketPrice,
+    previousClose: meta.chartPreviousClose || meta.previousClose || (closes.length > 1 ? closes[closes.length - 2] : meta.regularMarketPrice),
+    closes: closes
+  });
+
+  // Parse comparison tickers
+  if (r.comparisons) {
+    for (const comp of r.comparisons) {
+      const cCloses = (comp.close || []).filter(v => v != null);
+      const lastClose = cCloses.length > 0 ? cCloses[cCloses.length - 1] : null;
+      const prevClose = cCloses.length > 1 ? cCloses[cCloses.length - 2] : lastClose;
+      result.set(comp.symbol, {
+        price: lastClose,
+        previousClose: prevClose,
+        closes: cCloses
+      });
+    }
+  }
+  return result;
+}
+
+// Fetch a single Teleborsa fund NAV
+async function fetchTeleborsaNAV(teleborsaSlug) {
+  const tbUrl = `https://www.teleborsa.it/fondi/${teleborsaSlug}`;
+  const html = await withRetry(() => proxyFetch(tbUrl), 1, 4000);
+  const match = html.match(/ctlHeader_lblPrice">([^<]+)</);
+  if (!match) throw new Error('NAV not found in page');
+  const priceStr = match[1].replace('.', '').replace(',', '.');
+  const nav = parseFloat(priceStr);
+  if (isNaN(nav)) throw new Error('Invalid NAV: ' + match[1]);
+  return nav;
+}
+
+// Compute totalCost for a holding from its config
+function holdingTotalCost(h) {
+  if (h.totalCost != null) return h.totalCost;
+  if (h.avgCost != null && h.shares != null) return h.avgCost * h.shares;
+  return 0;
+}
+
+// Parse a holding that has live Yahoo/CoinGecko data
+function parseHolding(holding, data) {
+  const result = data.chart.result[0];
+  const meta = result.meta;
+  const quotes = (result.indicators && result.indicators.quote && result.indicators.quote[0]) || {};
+  const closes = (quotes.close || []).filter(v => v != null);
+
+  const currentPrice = meta.regularMarketPrice;
+  const previousClose = meta.chartPreviousClose || meta.previousClose || (closes.length > 1 ? closes[closes.length - 2] : currentPrice);
+  const recentCloses = closes.slice(-5);
+  const cost = holdingTotalCost(holding);
+  const marketValue = currentPrice * (holding.shares || 0);
+
+  return {
+    ...holding,
+    currentPrice,
+    previousClose,
+    dayChange: currentPrice - previousClose,
+    dayChangePct: ((currentPrice - previousClose) / previousClose) * 100,
+    marketValue,
+    totalCost: cost,
+    gainLoss: cost > 0 ? marketValue - cost : null,
+    gainLossPct: cost > 0 ? ((marketValue - cost) / cost) * 100 : null,
+    sparkline: recentCloses,
+    live: true,
+    loaded: true
+  };
+}
+
+// Build a static holding (no live price — BTP, fund, policy)
+function staticHolding(holding) {
+  const cost = holdingTotalCost(holding);
+  return {
+    ...holding,
+    currentPrice: null,
+    previousClose: null,
+    dayChange: null,
+    dayChangePct: null,
+    marketValue: cost,  // best estimate = what was invested
+    totalCost: cost,
+    gainLoss: null,
+    gainLossPct: null,
+    sparkline: [],
+    live: false,
+    loaded: true
+  };
+}
+
+// Holding that failed to load
+function failedHolding(holding) {
+  const cost = holdingTotalCost(holding);
+  return {
+    ...holding,
+    currentPrice: null, previousClose: null,
+    dayChange: null, dayChangePct: null,
+    marketValue: holding.ticker ? null : cost,
+    totalCost: cost,
+    gainLoss: null, gainLossPct: null,
+    sparkline: [], live: false, loaded: !holding.ticker
+  };
+}
+
+// Small delay to avoid proxy rate-limits
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Process all portfolio items
+async function loadPortfolio() {
+  isLoading = true;
+  const btn = document.getElementById('refreshBtn');
+  const status = document.getElementById('statusBar');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  status.textContent = 'Loading portfolio...';
+  status.className = 'status-bar';
+  status.style.display = 'block';
+
+  // Initialize all holdings
+  portfolioData = PORTFOLIO.map(h => {
+    if (h.ticker || h.teleborsa) return failedHolding(h);
+    return staticHolding(h);
+  });
+
+  document.getElementById('mainContent').style.display = 'block';
+  renderDashboard();
+
+  let liveCount = 0;
+  let errorCount = 0;
+
+  // ── STEP 1: Fetch ALL stock prices in ONE proxy call ──
+  const stockTickers = PORTFOLIO.filter(h => h.ticker).map(h => h.ticker);
+  if (stockTickers.length > 0) {
+    status.textContent = `Fetching stock prices...`;
+    try {
+      const stockPrices = await fetchAllStockPrices(stockTickers);
+      PORTFOLIO.forEach((h, i) => {
+        if (!h.ticker) return;
+        const sp = stockPrices.get(h.ticker);
+        if (!sp || sp.price == null) { errorCount++; return; }
+        const cost = holdingTotalCost(h);
+        const mv = sp.price * (h.shares || 0);
+        portfolioData[i] = {
+          ...h,
+          currentPrice: sp.price,
+          previousClose: sp.previousClose,
+          dayChange: sp.price - sp.previousClose,
+          dayChangePct: ((sp.price - sp.previousClose) / sp.previousClose) * 100,
+          marketValue: mv,
+          totalCost: cost,
+          gainLoss: cost > 0 ? mv - cost : null,
+          gainLossPct: cost > 0 ? ((mv - cost) / cost) * 100 : null,
+          sparkline: sp.closes.slice(-5),
+          live: true, loaded: true
+        };
+        liveCount++;
+      });
+      renderDashboard();
+    } catch (e) {
+      console.error('Failed to load stock prices:', e);
+      errorCount += stockTickers.length;
+    }
+  }
+
+  // ── STEP 2: Fetch Teleborsa fund NAVs (deduplicated, with delays) ──
+  const teleborsaHoldings = [];
+  PORTFOLIO.forEach((h, i) => { if (h.teleborsa) teleborsaHoldings.push({ h, i }); });
+
+  // Deduplicate slugs
+  const uniqueSlugs = [...new Set(teleborsaHoldings.map(x => x.h.teleborsa))];
+  const navCache = {};
+  let slugIdx = 0;
+
+  for (const slug of uniqueSlugs) {
+    slugIdx++;
+    status.textContent = `Fetching fund NAV... (${slugIdx}/${uniqueSlugs.length})`;
+
+    // Wait between proxy calls to avoid rate limiting
+    if (slugIdx > 1) await delay(3000);
+
+    try {
+      navCache[slug] = await fetchTeleborsaNAV(slug);
+      console.log(`[Fund] ${slug} NAV = ${navCache[slug]}`);
+    } catch (e) {
+      console.error(`[Fund] ${slug} failed:`, e.message);
+      navCache[slug] = null;
+    }
+  }
+
+  // Apply NAVs to all fund holdings
+  for (const { h, i } of teleborsaHoldings) {
+    const nav = navCache[h.teleborsa];
+    if (nav == null) { errorCount++; continue; }
+    const cost = holdingTotalCost(h);
+    const mv = nav * (h.shares || 0);
+    portfolioData[i] = {
+      ...h,
+      currentPrice: nav,
+      previousClose: null,
+      dayChange: null, dayChangePct: null,
+      marketValue: mv,
+      totalCost: cost,
+      gainLoss: cost > 0 ? mv - cost : null,
+      gainLossPct: cost > 0 ? ((mv - cost) / cost) * 100 : null,
+      sparkline: [],
+      live: true, loaded: true
+    };
+    liveCount++;
+  }
+
+  renderDashboard();
+
+  isLoading = false;
+  btn.classList.remove('loading');
+  btn.disabled = false;
+
+  const staticCount = PORTFOLIO.filter(h => !h.ticker && !h.teleborsa).length;
+  if (liveCount === 0 && errorCount > 0) {
+    status.textContent = `Quotazioni non disponibili. ${staticCount} posizioni a costo.`;
+    status.className = 'status-bar error';
+  } else if (errorCount > 0) {
+    status.textContent = `${liveCount} quotazioni live, ${errorCount} errori. ${staticCount} a costo.`;
+    status.className = 'status-bar';
+  } else {
+    status.textContent = `${liveCount} quotazioni live. ${staticCount} posizioni a costo/nominale.`;
+    status.className = 'status-bar';
+  }
+
+  document.getElementById('lastUpdated').textContent =
+    'Updated: ' + new Date().toLocaleString();
+
+  renderDashboard();
+}
+
+// Main render function
+function renderDashboard() {
+  const all = portfolioData.filter(h => h.loaded);
+  const totalValue = all.reduce((s, h) => s + (h.marketValue || 0), 0);
+  const totalCost = all.reduce((s, h) => s + (h.totalCost || 0), 0);
+  const liveOnly = all.filter(h => h.live);
+  const dayGain = liveOnly.reduce((s, h) => s + ((h.dayChange || 0) * (h.shares || 0)), 0);
+  const liveValue = liveOnly.reduce((s, h) => s + (h.marketValue || 0), 0);
+  const dayGainPct = liveValue > 0 ? (dayGain / (liveValue - dayGain)) * 100 : 0;
+
+  // Count by type
+  const typeCount = {};
+  all.forEach(h => { typeCount[h.type] = (typeCount[h.type] || 0) + 1; });
+
+  renderSummary(totalValue, totalCost, dayGain, dayGainPct, all.length, typeCount);
+  renderCharts(all, totalValue);
+  renderHoldings(all, totalValue);
+}
+
+// Type labels in Italian
+const TYPE_LABELS = { stock: 'Azioni', btp: 'BTP', fund: 'Fondi', policy: 'Polizze', etf: 'ETF', etc: 'ETC', crypto: 'Crypto', deposit: 'Deposito' };
+
+// Summary cards
+function renderSummary(totalValue, totalCost, dayGain, dayGainPct, count, typeCount) {
+  const grid = document.getElementById('summaryGrid');
+  const livePositions = portfolioData.filter(h => h.live);
+  grid.innerHTML = `
+    <div class="summary-card fade-in">
+      <div class="label">Valore Portafoglio</div>
+      <div class="value">${fmtCurrency(totalValue)}</div>
+      <div class="sub neutral">di cui ${fmtCurrency(livePositions.reduce((s,h) => s + (h.marketValue||0), 0))} live</div>
+    </div>
+    <div class="summary-card fade-in">
+      <div class="label">Variazione Giornaliera</div>
+      <div class="value ${gainClass(dayGain)}">${dayGain >= 0 ? '+' : ''}${fmtCurrency(dayGain)}</div>
+      <div class="sub ${gainClass(dayGainPct)}">${fmtPct(dayGainPct)}</div>
+    </div>
+    <div class="summary-card fade-in">
+      <div class="label">Totale Investito</div>
+      <div class="value">${fmtCurrency(totalCost)}</div>
+      <div class="sub neutral">${count} posizioni</div>
+    </div>
+    <div class="summary-card fade-in">
+      <div class="label">Asset Mix</div>
+      <div class="value" style="font-size:1rem;">${Object.entries(typeCount).map(([t,c]) => `${c} ${TYPE_LABELS[t] || t}`).join(', ')}</div>
+    </div>
+  `;
+}
+
+// Allocation grid (replaces donut)
+function renderAllocationGrid(holdings, totalValue) {
+  const sorted = [...holdings]
+    .filter(h => (h.marketValue || 0) > 0)
+    .sort((a, b) => (b.marketValue || 0) - (a.marketValue || 0));
+
+  const rows = sorted.map((h, i) => {
+    const mv = h.marketValue || 0;
+    const pct = totalValue > 0 ? (mv / totalValue) * 100 : 0;
+    const color = CHART_COLORS[i % CHART_COLORS.length];
+    const typeLabel = TYPE_LABELS[h.type] || h.type;
+    const label = h.isNominal ? 'nominale' : (h.live ? 'live' : 'costo');
+    const labelColor = h.live ? 'var(--green)' : 'var(--text-muted)';
+    return `
+      <tr>
+        <td>
+          <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${color};margin-right:8px;vertical-align:middle;"></span>
+          ${h.name}
+        </td>
+        <td><span class="type-tag type-${h.type}">${typeLabel}</span></td>
+        <td class="right">${fmtCurrency(h.totalCost || 0)}</td>
+        <td class="right">${fmtCurrency(mv)} <span style="color:${labelColor};font-size:0.65rem;">${label}</span></td>
+        <td class="right" style="width:130px;">
+          <div class="weight-bar-container">
+            <span>${pct.toFixed(1)}%</span>
+            <div class="weight-bar" style="width:70px;"><div class="weight-bar-fill" style="width:${pct}%;background:${color};"></div></div>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  return `
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:8px 12px;font-size:0.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">Strumento</th>
+          <th style="text-align:left;padding:8px 12px;font-size:0.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">Tipo</th>
+          <th style="text-align:right;padding:8px 12px;font-size:0.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">Investito</th>
+          <th style="text-align:right;padding:8px 12px;font-size:0.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">Controvalore</th>
+          <th style="text-align:right;padding:8px 12px;font-size:0.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">Peso</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// Charts
+function renderCharts(holdings, totalValue) {
+  const grid = document.getElementById('chartsGrid');
+
+  // Allocation by type (for donut)
+  const typeMap = {};
+  holdings.forEach(h => {
+    typeMap[h.type] = (typeMap[h.type] || 0) + (h.marketValue || 0);
+  });
+  const allocationByType = Object.entries(typeMap)
+    .filter(([, value]) => value > 0)
+    .map(([label, value]) => ({ label: TYPE_LABELS[label] || label, value, pct: (value / totalValue) * 100 }))
+    .sort((a, b) => b.value - a.value);
+
+  // Performance bars (only for positions with P/L)
+  const perfData = holdings
+    .filter(h => h.gainLossPct != null)
+    .sort((a, b) => b.gainLossPct - a.gainLossPct);
+
+  grid.innerHTML = `
+    <div class="chart-card fade-in">
+      <h3>Allocazione per Tipo</h3>
+      <div class="chart-container">
+        ${renderDonut(allocationByType, 6)}
+      </div>
+    </div>
+    <div class="chart-card fade-in">
+      <h3>Performance (Rendimento %)</h3>
+      <div class="chart-container">
+        ${perfData.length > 0 ? renderPerfBars(perfData) : '<div style="color:var(--text-muted);text-align:center;padding:20px;">Nessun dato P/L disponibile</div>'}
+      </div>
+    </div>
+  `;
+}
+
+// SVG Donut chart
+function renderDonut(data, maxSlices = 10) {
+  // If more than maxSlices, group the rest as "Other"
+  let slices = data;
+  if (data.length > maxSlices) {
+    slices = data.slice(0, maxSlices - 1);
+    const otherPct = data.slice(maxSlices - 1).reduce((s, d) => s + d.pct, 0);
+    const otherValue = data.slice(maxSlices - 1).reduce((s, d) => s + d.value, 0);
+    slices.push({ label: 'Other', value: otherValue, pct: otherPct });
+  }
+
+  const size = 180;
+  const cx = size / 2, cy = size / 2;
+  const outerR = 80, innerR = 50;
+  let cumAngle = -90;
+  let paths = '';
+
+  slices.forEach((slice, i) => {
+    const angle = (slice.pct / 100) * 360;
+    if (angle <= 0) return;
+    const startAngle = cumAngle;
+    const endAngle = cumAngle + angle;
+    const largeArc = angle > 180 ? 1 : 0;
+
+    const rad = Math.PI / 180;
+    const x1o = cx + outerR * Math.cos(startAngle * rad);
+    const y1o = cy + outerR * Math.sin(startAngle * rad);
+    const x2o = cx + outerR * Math.cos(endAngle * rad);
+    const y2o = cy + outerR * Math.sin(endAngle * rad);
+    const x1i = cx + innerR * Math.cos(endAngle * rad);
+    const y1i = cy + innerR * Math.sin(endAngle * rad);
+    const x2i = cx + innerR * Math.cos(startAngle * rad);
+    const y2i = cy + innerR * Math.sin(startAngle * rad);
+
+    const color = CHART_COLORS[i % CHART_COLORS.length];
+
+    if (angle >= 359.9) {
+      // Full circle
+      paths += `<circle cx="${cx}" cy="${cy}" r="${outerR}" fill="${color}" />`;
+      paths += `<circle cx="${cx}" cy="${cy}" r="${innerR}" fill="var(--bg-card)" />`;
+    } else {
+      paths += `<path d="M${x1o},${y1o} A${outerR},${outerR} 0 ${largeArc} 1 ${x2o},${y2o} L${x1i},${y1i} A${innerR},${innerR} 0 ${largeArc} 0 ${x2i},${y2i} Z" fill="${color}" />`;
+    }
+
+    cumAngle = endAngle;
+  });
+
+  const legend = slices.map((slice, i) => `
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${CHART_COLORS[i % CHART_COLORS.length]}"></div>
+      <span class="legend-label">${slice.label}</span>
+      <span class="legend-value">${slice.pct.toFixed(1)}%</span>
+    </div>
+  `).join('');
+
+  return `
+    <div class="donut-wrapper">
+      <svg class="donut-svg" viewBox="0 0 ${size} ${size}">
+        ${paths}
+        <text x="${cx}" y="${cy - 6}" text-anchor="middle" fill="var(--text-primary)" font-size="16" font-weight="700">${slices.length}</text>
+        <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="var(--text-secondary)" font-size="10">assets</text>
+      </svg>
+      <div class="donut-legend">${legend}</div>
+    </div>
+  `;
+}
+
+// Performance bars
+function renderPerfBars(data) {
+  if (!data.length) return '<div class="status-bar">No data</div>';
+
+  const maxAbs = Math.max(...data.map(d => Math.abs(d.gainLossPct)), 1);
+
+  return `<div class="perf-bars">${data.map(d => {
+    const pct = d.gainLossPct;
+    const width = Math.max((Math.abs(pct) / maxAbs) * 100, 2);
+    const color = pct >= 0 ? 'var(--green)' : 'var(--red)';
+
+    return `
+      <div class="perf-bar-row">
+        <span class="perf-bar-label">${d.ticker || d.name.substring(0, 8)}</span>
+        <div class="perf-bar-track">
+          <div class="perf-bar-fill" style="width:${width}%;background:${color};"></div>
+        </div>
+        <span class="perf-bar-value ${gainClass(pct)}">${fmtPct(pct)}</span>
+      </div>
+    `;
+  }).join('')}</div>`;
+}
+
+// Sparkline SVG
+function renderSparkline(data, color) {
+  if (!data || data.length < 2) return '';
+  const w = 50, h = 22, pad = 2;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+
+  const points = data.map((v, i) => {
+    const x = pad + (i / (data.length - 1)) * (w - 2 * pad);
+    const y = pad + (1 - (v - min) / range) * (h - 2 * pad);
+    return `${x},${y}`;
+  }).join(' ');
+
+  return `<svg class="sparkline-svg" viewBox="0 0 ${w} ${h}">
+    <polyline points="${points}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+// Sort value extractor for each column
+function getSortValue(h, col) {
+  switch (col) {
+    case 'issuer':   return (h.issuer || '').toLowerCase();
+    case 'code':     return (h.ticker || h.isin || '').toLowerCase();
+    case 'name':     return (h.name || '').toLowerCase();
+    case 'type':     return (h.type || '');
+    case 'shares':   return h.shares != null ? h.shares : -1;
+    case 'invested': return h.totalCost != null ? h.totalCost : -1;
+    case 'price':    return h.currentPrice != null ? h.currentPrice : -1;
+    case 'dayChange':return h.dayChangePct != null ? h.dayChangePct : -1e9;
+    case 'value':    return h.marketValue != null ? h.marketValue : -1;
+    case 'pl':       return h.gainLossPct != null ? h.gainLossPct : -1e9;
+    case 'weight':   return h.marketValue != null ? h.marketValue : -1;
+    default:         return 0;
+  }
+}
+
+function handleSort(col) {
+  if (sortColumn === col) {
+    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortColumn = col;
+    sortDirection = ['issuer', 'code', 'name', 'type'].includes(col) ? 'asc' : 'desc';
+  }
+  document.querySelectorAll('thead th.sortable').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (th.dataset.sort === sortColumn) {
+      th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
+  });
+  renderDashboard();
+}
+
+// Holdings table
+function renderHoldings(holdings, totalValue) {
+  const tbody = document.getElementById('holdingsBody');
+  const sorted = [...holdings].sort((a, b) => {
+    try {
+      const va = getSortValue(a, sortColumn);
+      const vb = getSortValue(b, sortColumn);
+      let cmp = 0;
+      if (typeof va === 'string' && typeof vb === 'string') cmp = va.localeCompare(vb);
+      else cmp = (va > vb ? 1 : va < vb ? -1 : 0);
+      return sortDirection === 'asc' ? cmp : -cmp;
+    } catch (e) { return 0; }
+  });
+
+  tbody.innerHTML = sorted.map(h => {
+    const mv = h.marketValue || 0;
+    const weight = totalValue > 0 ? (mv / totalValue) * 100 : 0;
+    const sparkColor = (h.dayChange || 0) >= 0 ? 'var(--green)' : 'var(--red)';
+    const typeClass = `type-${h.type}`;
+    const typeLabel = TYPE_LABELS[h.type] || h.type;
+    const sharesStr = h.shares != null ? h.shares.toLocaleString('it-IT') : '—';
+    const investedStr = h.totalCost != null ? fmtCurrency(h.totalCost) : '—';
+    const staticTag = h.live ? '' : h.isNominal
+      ? ' <span class="type-tag" style="background:#555c6622;color:#555c66;">nominale</span>'
+      : ' <span class="type-tag" style="background:#555c6622;color:#555c66;">costo</span>';
+
+    return `
+      <tr class="fade-in">
+        <td style="color:var(--text-secondary);">${h.issuer || '—'}</td>
+        <td><span class="ticker-badge">${h.ticker || h.isin || '—'}</span></td>
+        <td class="name-cell" style="color:var(--text-secondary);" title="${h.name}">${h.name}</td>
+        <td><span class="type-tag ${typeClass}">${typeLabel}</span></td>
+        <td class="right">${sharesStr}</td>
+        <td class="right">${investedStr}</td>
+        <td class="right">${h.currentPrice != null ? fmtCurrency(h.currentPrice) : '—'}</td>
+        <td class="right ${gainClass(h.dayChangePct)}">${h.dayChangePct != null ? fmtPct(h.dayChangePct) : '—'}</td>
+        <td>${renderSparkline(h.sparkline, sparkColor)}</td>
+        <td class="right">${mv > 0 ? fmtCurrency(mv) : '—'}${staticTag}</td>
+        <td class="right ${gainClass(h.gainLoss)}">
+          ${h.gainLoss != null ? `${h.gainLoss >= 0 ? '+' : ''}${fmtCurrency(h.gainLoss)}` : '—'}
+          ${h.gainLossPct != null ? `<br><small>${fmtPct(h.gainLossPct)}</small>` : ''}
+        </td>
+        <td class="right">
+          <div class="weight-bar-container">
+            <span>${weight.toFixed(1)}%</span>
+            <div class="weight-bar"><div class="weight-bar-fill" style="width:${weight}%"></div></div>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// Refresh
+function refreshAll() {
+  if (isLoading) return;
+  loadPortfolio();
+}
+
+// Show errors visually (useful on mobile where console is not accessible)
+window.onerror = function(msg, src, line, col, err) {
+  const s = document.getElementById('statusBar');
+  if (s) {
+    s.textContent = 'JS Error: ' + msg + ' (line ' + line + ')';
+    s.style.color = '#b85c5c';
+  }
+};
+
+// Auto-load on page open
+function initDashboard() {
+  try {
+    // Attach sort handlers to column headers
+    document.querySelectorAll('thead th.sortable').forEach(th => {
+      th.addEventListener('click', () => handleSort(th.dataset.sort));
+    });
+    // Mark default sort column
+    const defaultTh = document.querySelector(`thead th[data-sort="${sortColumn}"]`);
+    if (defaultTh) defaultTh.classList.add('sort-desc');
+
+    loadPortfolio();
+  } catch (e) {
+    const s = document.getElementById('statusBar');
+    if (s) {
+      s.textContent = 'Init Error: ' + e.message;
+      s.style.color = '#b85c5c';
+    }
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initDashboard);
+} else {
+  initDashboard();
+}
+</script>
+
+</body>
+</html>
